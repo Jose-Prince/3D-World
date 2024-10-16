@@ -1,49 +1,63 @@
 // line.rs
 
 use crate::framebuffer::Framebuffer;
-use nalgebra_glm as glm; // Asumiendo que nalgebra-glm está correctamente importado y configurado
+use crate::fragment::Fragment;
+use crate::vertex::Vertex;
+use crate::color::Color;
 
-pub trait Line {
-    fn line(&mut self, vertex1: glm::TVec3<f64>, vertex2: glm::TVec3<f64>);
-}
+pub fn line(a: &Vertex, b: &Vertex) -> Vec<Fragment> {
+    let mut fragments = Vec::new();
 
-impl Line for Framebuffer {
-    fn line(&mut self, vertex1: glm::TVec3<f64>, vertex2: glm::TVec3<f64>) {
-        let x1 = vertex1.x.round() as isize;
-        let y1 = vertex1.y.round() as isize;
-        let x2 = vertex2.x.round() as isize;
-        let y2 = vertex2.y.round() as isize;
+    // Posiciones iniciales y finales
+    let x0 = a.position.x as isize;
+    let y0 = a.position.y as isize;
+    let x1 = b.position.x as isize;
+    let y1 = b.position.y as isize;
 
-        let mut x = x1;
-        let mut y = y1;
-        let dx = (x2 - x1).abs();
-        let dy = -(y2 - y1).abs();
-        let sx = if x1 < x2 { 1 } else { -1 };
-        let sy = if y1 < y2 { 1 } else { -1 };
-        let mut err = dx + dy;
+    // Diferencias absolutas
+    let dx = (x1 - x0).abs();
+    let dy = (y1 - y0).abs();
 
-        loop {
-            self.point(x, y);
+    // Incrementos
+    let sx = if x0 < x1 { 1 } else { -1 };
+    let sy = if y0 < y1 { 1 } else { -1 };
 
-            if x == x2 && y == y2 {
-                break;
-            }
+    // Diferencias acumuladas
+    let mut err = dx - dy;
 
-            let e2 = 2 * err;
-            if e2 >= dy {
-                if x == x2 {
-                    break;
-                }
-                err += dy;
-                x += sx;
-            }
-            if e2 <= dx {
-                if y == y2 {
-                    break;
-                }
-                err += dx;
-                y += sy;
-            }
+    let mut x = x0;
+    let mut y = y0;
+
+    loop {
+        // Agregar un fragmento en la posición actual con el color interpolado
+        let t = ((x - x0) as f32 / (x1 - x0).max(1) as f32).abs();
+        let color = a.color.lerp(&b.color, t);
+        fragments.push(Fragment::new(x as f32, y as f32, color, 1.0));
+
+        // Si llegamos al punto final, terminamos
+        if x == x1 && y == y1 {
+            break;
+        }
+
+        // Actualizar el error acumulado y las coordenadas
+        let e2 = 2 * err;
+        if e2 > -dy {
+            err -= dy;
+            x += sx;
+        }
+        if e2 < dx {
+            err += dx;
+            y += sy;
         }
     }
+
+    fragments
+}
+
+pub fn triangle() -> Vec<Fragment> {
+    let mut fragments = Vec::new();
+
+    fragments.extend(line(v1, v2));
+    fragments.extend(line(v2, v3));
+    fragments.extend(line(v3, v1));
 }
