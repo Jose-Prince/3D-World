@@ -20,8 +20,6 @@ pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
         transformed.z / w,
     );
 
-    //Transform normal
-
     //Create a new Vertex with transformed attributes
     Vertex {
         position: vertex.position,
