@@ -7,9 +7,9 @@ use crate::camera::Camera;
 use std::f32::consts::PI;
 
 pub struct Framebuffer {
-    width: usize,
-    height: usize,
-    buffer: Vec<u32>,
+    pub width: usize,
+    pub height: usize,
+    pub buffer: Vec<u32>,
     background_color: Color,
     current_color: Color,
 }
@@ -28,18 +28,6 @@ impl Framebuffer {
             background_color,
             current_color,
         }
-    }
-
-    pub fn get_width(&self) -> usize {
-        self.width
-    }
-
-    pub fn get_height(&self) -> usize {
-        self.height
-    }
-
-    pub fn get_buffer(&self) -> &[u32] {
-        &self.buffer
     }
 
     pub fn clear(&mut self) {

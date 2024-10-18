@@ -1,7 +1,7 @@
 //vertex.rs
 
 use nalgebra_glm::{Vec2, Vec3};
-use crate::Color::Color;
+use crate::color::Color;
 
 #[derive(Clone, Debug)]
 pub struct Vertex {
@@ -19,7 +19,7 @@ impl Vertex {
         position,
         normal,
         tex_coords,
-        color: Color::black(),
+        color: Color::new(0,0,0),
         transformed_position: position,
         transformed_normal: normal,
       }
@@ -48,7 +48,7 @@ impl Vertex {
         position: Vec3::new(0.0, 0.0, 0.0),
         normal: Vec3::new(0.0, 1.0, 0.0),
         tex_coords: Vec2::new(0.0, 0.0),
-        color: Color::black(),
+        color: Color::new(0,0,0),
         transformed_position: Vec3::new(0.0, 0.0, 0.0),
         transformed_normal: Vec3::new(0.0, 1.0, 0.0),
       }

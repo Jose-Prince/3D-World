@@ -1,48 +1,110 @@
-mod framebuffer;
-mod color;
-mod bmp;
-mod camera;
-
-use framebuffer::Framebuffer;
-use color::Color;
-use nalgebra_glm::{Vec3, vec3};
+use nalgebra_glm::{Vec3, Mat4};
 use minifb::{Key, Window, WindowOptions};
-use camera::Camera;
+use std::time::Duration;
+use std::f32::consts::PI;
+
+mod framebuffer;
+mod line;
+mod vertex;
+mod obj;
+mod color;
+mod fragment;
+mod vertex_shader;
+mod camera;
+mod bmp;
+mod render;
+
+use color::Color;
+use framebuffer::Framebuffer;
+use vertex::Vertex;
+use obj::Obj;
+use line::triangle;
+use vertex_shader::vertex_shader;
+use crate::render::{Uniforms, render, create_model_matrix};
 
 fn main() {
+    let width = 800;
+    let height = 600;
+    let frame_delay = Duration::from_millis(16);
 
+    let mut framebuffer = Framebuffer::new(width, height);
+    let mut window = Window::new(
+        "Rust Graphics - Renderer Example",
+        width,
+        height,
+        WindowOptions::default(),
+    )
+    .unwrap();
 
-    while window.is_open() && !window.is_key_down(Key::Escape) {
+    window.update();
+
+    framebuffer.set_background_color(Color::new(0,0,0));
+
+    let mut translation = Vec3::new(300.0, 200.0, 0.0);
+    let mut rotation = Vec3::new(0.0, 0.0, 0.0);
+    let mut scale = 100.0f32;
+
+    let obj = Obj::load("src/ship.obj").expect("Failed to load obj");
+    let vertex_arrays = obj.get_vertex_array(); 
+
+    while window.is_open() {
+        if window.is_key_down(Key::Escape) {
+            break;
+        }
+
+        handle_input(&window, &mut translation, &mut rotation, &mut scale);
+
         framebuffer.clear();
-        
-        framebuffer.draw_background(&camera);
-        
-        // Rotación de la cámara
-        if window.is_key_down(Key::A) {
-            camera.orbit(0.05, 0.0);  // Rotar en el eje Y (yaw) hacia la izquierda
-        }
-        if window.is_key_down(Key::D) {
-            camera.orbit(-0.05, 0.0);  // Rotar en el eje Y (yaw) hacia la derecha
-        }
-        if window.is_key_down(Key::W) {
-            camera.orbit(0.0, 0.05);  // Rotar en el eje X (pitch) hacia arriba
-        }
-        if window.is_key_down(Key::S) {
-            camera.orbit(0.0, -0.05);  // Rotar en el eje X (pitch) hacia abajo
-        }
-        
-        //Changing camera zoom
-        if window.is_key_down(Key::Up) {
-            camera.zoom(-0.5); //Zoom in
-        }
-    
-        if window.is_key_down(Key::Down) {
-            camera.zoom(0.5); //Zoom out
-        }
 
-        // Renderiza la escena con la posición actual de la cámara
-        render(&mut framebuffer, &objects, &camera, &light);
+        let model_matrix = create_model_matrix(translation, scale, rotation);
+        let uniforms = Uniforms { model_matrix };
 
-        window.update_with_buffer(framebuffer.get_buffer(), width, height).unwrap();
+        framebuffer.set_current_color(Color::new(255,255,255));
+        render(&mut framebuffer, &uniforms, &vertex_arrays);
+
+        window
+            .update_with_buffer(&framebuffer.buffer, width, height)
+            .unwrap();
+
+        std::thread::sleep(frame_delay);
+    }
+}
+
+fn handle_input(window: &Window, translation: &mut Vec3, rotation: &mut Vec3, scale: &mut f32) {
+    if window.is_key_down(Key::Right) {
+        translation.x += 10.0;
+    }
+    if window.is_key_down(Key::Left) {
+        translation.x -= 10.0;
+    }
+    if window.is_key_down(Key::Up) {
+        translation.y -= 10.0;
+    }
+    if window.is_key_down(Key::Down) {
+        translation.y += 10.0;
+    }
+    if window.is_key_down(Key::S) {
+        *scale += 2.0;
+    }
+    if window.is_key_down(Key::A) {
+        *scale -= 2.0;
+    }
+    if window.is_key_down(Key::Q) {
+        rotation.x -= PI / 10.0;
+    }
+    if window.is_key_down(Key::W) {
+        rotation.x += PI / 10.0;
+    }
+    if window.is_key_down(Key::E) {
+        rotation.y -= PI / 10.0;
+    }
+    if window.is_key_down(Key::R) {
+        rotation.y += PI / 10.0;
+    }
+    if window.is_key_down(Key::T) {
+        rotation.z -= PI / 10.0;
+    }
+    if window.is_key_down(Key::Y) {
+        rotation.z += PI / 10.0;
     }
 }
