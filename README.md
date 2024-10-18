@@ -1,4 +1,6 @@
-# 3D-CAMERA
+# 3D-World
+
+![Captura desde 2024-10-18 13-30-39](https://github.com/user-attachments/assets/a438ce52-61ff-4fa3-8db9-a82f4de4dcf8)
 
 
-[Minecraft Diorama](https://github.com/user-attachments/assets/44e8d933-ccc5-48b8-94f7-8cf1b1dd9631)
+![Captura desde 2024-10-18 13-32-32](https://github.com/user-attachments/assets/5528e2ad-a815-4394-baa8-930944262912)
