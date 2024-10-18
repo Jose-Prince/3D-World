@@ -1,13 +1,25 @@
 //render.rs
-use nalgebra_glm::{Mat4, Vec2, Vec3, Vec4, look_at};
 use crate::vertex::Vertex;
 use crate::framebuffer::Framebuffer;
 use crate::line::{triangle, _triangle};
 use crate::vertex_shader::vertex_shader;
 
+use nalgebra_glm::{Mat4, Vec2, Vec3, Vec4, look_at, perspective};
+use std::f32::consts::PI;
+
 pub struct Uniforms {
     pub model_matrix: Mat4,
     pub view_matrix: Mat4,
+    pub projection_matrix: Mat4,
+}
+
+pub fn create_perspective_matrix(window_width: f32, window_height: f32) -> Mat4 {
+    let fov = 45.0 * PI / 180.0;
+    let aspect_ratio = window_width / window_height;
+    let near = 0.1;
+    let far = 10000.0;
+
+    perspective(fov, aspect_ratio, near, far)
 }
 
 pub fn create_view_matrix(eye: Vec3, center: Vec3, up: Vec3) -> Mat4 {
