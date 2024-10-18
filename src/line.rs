@@ -3,7 +3,7 @@
 use crate::fragment::Fragment;
 use crate::vertex::Vertex;
 use crate::color::Color;
-use nalgebra_glm::{Vec2, Vec3};
+use nalgebra_glm::{Vec2, Vec3, dot};
 
 pub fn line(a: &Vertex, b: &Vertex) -> Vec<Fragment> {
     let mut fragments = Vec::new();
@@ -47,11 +47,38 @@ pub fn line(a: &Vertex, b: &Vertex) -> Vec<Fragment> {
 
 pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
     let mut fragments = Vec::new();
+    let light_dir = Vec3::new(0.0, 0.0, -1.0);
 
-    // Draw the three sides of the triangle
-    fragments.extend(line(v1, v2));
-    fragments.extend(line(v2, v3));
-    fragments.extend(line(v3, v1));
+    let (a, b, c) = (v1.transformed_position, v2.transformed_position, v3.transformed_position);
+
+    let (min_x, min_y, max_x, max_y) = calculate_bounding_box(&a, &b, &c);
+
+    // Iterate over each pixel in the bounding box
+    for y in min_y..=max_y {
+        for x in min_x..=max_x {
+            let point = Vec3::new(x as f32, y as f32, 0.0);
+
+            // Calculate barycentric coordinates
+            let (w1, w2, w3) = barycentric_coordinates(&point, &a, &b, &c);
+
+            // Check if the point is inside the triangule
+            if w1 >= 0.0 && w1 <= 1.0 &&
+            w2 >= 0.0 && w2 <= 1.0 &&
+            w3 >= 0.0 && w3 <= 1.0 {
+                let normal = v1.transformed_normal;
+                let normal = normal.normalize();
+
+                // Calculate lighting intensity
+                let intensity = dot(&normal, &light_dir).max(0.0);
+
+                // Create a gray color and apply lighting
+                let base_color = Color::new(0, 0, 200);
+                let lit_color = base_color * intensity;
+
+                fragments.push(Fragment::new(x as f32, y as f32, lit_color, 0.0));
+            }
+        }
+    }
 
     fragments
 }
