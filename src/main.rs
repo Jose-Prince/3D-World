@@ -21,7 +21,7 @@ use obj::Obj;
 use line::triangle;
 use vertex_shader::vertex_shader;
 use camera::Camera;
-use crate::render::{Uniforms, render, create_model_matrix, create_view_matrix, create_perspective_matrix};
+use crate::render::{Uniforms, render, create_model_matrix, create_view_matrix, create_perspective_matrix, create_viewport_matrix};
 
 fn main() {
     let width = 900;
@@ -66,10 +66,12 @@ fn main() {
         let model_matrix = create_model_matrix(translation, scale, rotation);
         let view_matrix = create_view_matrix(camera.eye, camera.center, camera.up);
         let projection_matrix = create_perspective_matrix(width as f32, height as f32);
+        let viewport_matrix = create_viewport_matrix(width as f32, height as f32);
         let uniforms = Uniforms { 
             model_matrix, 
             view_matrix,
-            projection_matrix 
+            projection_matrix,
+            viewport_matrix,
         };
 
         framebuffer.set_current_color(Color::new(0,0,0));

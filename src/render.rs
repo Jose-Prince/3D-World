@@ -11,6 +11,16 @@ pub struct Uniforms {
     pub model_matrix: Mat4,
     pub view_matrix: Mat4,
     pub projection_matrix: Mat4,
+    pub viewport_matrix: Mat4,
+}
+
+pub fn create_viewport_matrix(width: f32, height: f32) -> Mat4 {
+    Mat4::new(
+        width /2.0, 0.0, 0.0, width / 2.0,
+        0.0, -height / 2.0, 0.0, height / 2.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+    )
 }
 
 pub fn create_perspective_matrix(window_width: f32, window_height: f32) -> Mat4 {
