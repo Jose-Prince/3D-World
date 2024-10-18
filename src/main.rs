@@ -38,7 +38,7 @@ fn main() {
 
     window.update();
 
-    framebuffer.set_background_color(Color::new(0,0,0));
+    framebuffer.set_background_color(Color::new(255, 255, 221));
 
     let mut translation = Vec3::new(300.0, 200.0, 0.0);
     let mut rotation = Vec3::new(0.0, 0.0, 0.0);
@@ -59,7 +59,7 @@ fn main() {
         let model_matrix = create_model_matrix(translation, scale, rotation);
         let uniforms = Uniforms { model_matrix };
 
-        framebuffer.set_current_color(Color::new(255,255,255));
+        framebuffer.set_current_color(Color::new(0,0,0));
         render(&mut framebuffer, &uniforms, &vertex_arrays);
 
         window
@@ -72,16 +72,16 @@ fn main() {
 
 fn handle_input(window: &Window, translation: &mut Vec3, rotation: &mut Vec3, scale: &mut f32) {
     if window.is_key_down(Key::Right) {
-        translation.x += 10.0;
+        translation.x += 5.0;
     }
     if window.is_key_down(Key::Left) {
-        translation.x -= 10.0;
+        translation.x -= 5.0;
     }
     if window.is_key_down(Key::Up) {
-        translation.y -= 10.0;
+        translation.y -= 5.0;
     }
     if window.is_key_down(Key::Down) {
-        translation.y += 10.0;
+        translation.y += 5.0;
     }
     if window.is_key_down(Key::S) {
         *scale += 2.0;
@@ -90,21 +90,21 @@ fn handle_input(window: &Window, translation: &mut Vec3, rotation: &mut Vec3, sc
         *scale -= 2.0;
     }
     if window.is_key_down(Key::Q) {
-        rotation.x -= PI / 10.0;
+        rotation.x -= PI / 5.0;
     }
     if window.is_key_down(Key::W) {
-        rotation.x += PI / 10.0;
+        rotation.x += PI / 5.0;
     }
     if window.is_key_down(Key::E) {
-        rotation.y -= PI / 10.0;
+        rotation.y -= PI / 5.0;
     }
     if window.is_key_down(Key::R) {
-        rotation.y += PI / 10.0;
+        rotation.y += PI / 5.0;
     }
     if window.is_key_down(Key::T) {
-        rotation.z -= PI / 10.0;
+        rotation.z -= PI / 5.0;
     }
     if window.is_key_down(Key::Y) {
-        rotation.z += PI / 10.0;
+        rotation.z += PI / 5.0;
     }
 }

@@ -2,7 +2,7 @@
 use nalgebra_glm::{Mat4, Vec2, Vec3, Vec4};
 use crate::vertex::Vertex;
 use crate::framebuffer::Framebuffer;
-use crate::line::triangle;
+use crate::line::{triangle, _triangle};
 use crate::vertex_shader::vertex_shader;
 
 pub struct Uniforms {

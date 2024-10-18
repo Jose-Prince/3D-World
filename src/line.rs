@@ -26,7 +26,7 @@ pub fn line(a: &Vertex, b: &Vertex) -> Vec<Fragment> {
 
     loop {
         let z = start.z + (end.z - start.z) * (x0 - start.x as i32) as f32 / (end.x - start.x) as f32;
-        fragments.push(Fragment::new(x0 as f32, y0 as f32, Color::new(255, 255, 255), z));
+        fragments.push(Fragment::new(x0 as f32, y0 as f32, Color::new(0, 0, 0), z));
 
         if x0 == x1 && y0 == y1 { break; }
 
@@ -44,10 +44,20 @@ pub fn line(a: &Vertex, b: &Vertex) -> Vec<Fragment> {
     fragments
 }
 
+pub fn _triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
+    let mut fragments = Vec::new();
+
+    // Draw the three sides of the triangle
+    fragments.extend(line(v1, v2));
+    fragments.extend(line(v2, v3));
+    fragments.extend(line(v3, v1));
+
+    fragments
+}
 
 pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
     let mut fragments = Vec::new();
-    let light_dir = Vec3::new(0.0, 0.0, -1.0);
+    let light_dir = Vec3::new(0.0, 0.0, 1.0);
 
     let (a, b, c) = (v1.transformed_position, v2.transformed_position, v3.transformed_position);
 
@@ -72,7 +82,7 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
                 let intensity = dot(&normal, &light_dir).max(0.0);
 
                 // Create a gray color and apply lighting
-                let base_color = Color::new(0, 0, 200);
+                let base_color = Color::new(100, 100, 100);
                 let lit_color = base_color * intensity;
 
                 fragments.push(Fragment::new(x as f32, y as f32, lit_color, 0.0));
@@ -108,5 +118,5 @@ fn barycentric_coordinates(p: &Vec3, a: &Vec3, b: &Vec3, c: &Vec3) -> (f32, f32,
 }
 
 fn area_of_triangle(a: Vec3, b: Vec3, c: Vec3) -> f32 {
-    ((a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y)) / 2.0).abs()
+    (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x)
 }
