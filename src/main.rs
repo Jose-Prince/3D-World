@@ -20,7 +20,8 @@ use vertex::Vertex;
 use obj::Obj;
 use line::triangle;
 use vertex_shader::vertex_shader;
-use crate::render::{Uniforms, render, create_model_matrix};
+use camera::Camera;
+use crate::render::{Uniforms, render, create_model_matrix, create_view_matrix};
 
 fn main() {
     let width = 900;
@@ -35,6 +36,12 @@ fn main() {
         WindowOptions::default(),
     )
     .unwrap();
+
+    let mut camera = Camera {
+        eye: Vec3::new(10.0, 10.0, 10.0),
+        center: Vec3::new(0.0, 0.0, 0.0),
+        up: Vec3::new(0.0, 1.0, 0.0), 
+    };
 
     window.update();
 
@@ -57,7 +64,11 @@ fn main() {
         framebuffer.clear();
 
         let model_matrix = create_model_matrix(translation, scale, rotation);
-        let uniforms = Uniforms { model_matrix };
+        let view_matrix = create_view_matrix(camera.eye, camera.center, camera.up);
+        let uniforms = Uniforms { 
+            model_matrix, 
+            view_matrix 
+        };
 
         framebuffer.set_current_color(Color::new(0,0,0));
         render(&mut framebuffer, &uniforms, &vertex_arrays);

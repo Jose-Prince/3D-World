@@ -1,5 +1,5 @@
 //render.rs
-use nalgebra_glm::{Mat4, Vec2, Vec3, Vec4};
+use nalgebra_glm::{Mat4, Vec2, Vec3, Vec4, look_at};
 use crate::vertex::Vertex;
 use crate::framebuffer::Framebuffer;
 use crate::line::{triangle, _triangle};
@@ -7,6 +7,11 @@ use crate::vertex_shader::vertex_shader;
 
 pub struct Uniforms {
     pub model_matrix: Mat4,
+    pub view_matrix: Mat4,
+}
+
+pub fn create_view_matrix(eye: Vec3, center: Vec3, up: Vec3) -> Mat4 {
+    look_at(&eye, &center, &up)
 }
 
 pub fn create_model_matrix(translation: Vec3, scale: f32, rotation: Vec3) -> Mat4 {
