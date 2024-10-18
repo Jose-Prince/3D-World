@@ -23,8 +23,8 @@ use vertex_shader::vertex_shader;
 use crate::render::{Uniforms, render, create_model_matrix};
 
 fn main() {
-    let width = 800;
-    let height = 600;
+    let width = 900;
+    let height = 800;
     let frame_delay = Duration::from_millis(16);
 
     let mut framebuffer = Framebuffer::new(width, height);
@@ -40,7 +40,7 @@ fn main() {
 
     framebuffer.set_background_color(Color::new(255, 255, 221));
 
-    let mut translation = Vec3::new(300.0, 200.0, 0.0);
+    let mut translation = Vec3::new(700.0, 500.0, 0.0);
     let mut rotation = Vec3::new(0.0, 0.0, 0.0);
     let mut scale = 100.0f32;
 
@@ -72,16 +72,16 @@ fn main() {
 
 fn handle_input(window: &Window, translation: &mut Vec3, rotation: &mut Vec3, scale: &mut f32) {
     if window.is_key_down(Key::Right) {
-        translation.x += 5.0;
-    }
-    if window.is_key_down(Key::Left) {
         translation.x -= 5.0;
     }
+    if window.is_key_down(Key::Left) {
+        translation.x += 5.0;
+    }
     if window.is_key_down(Key::Up) {
-        translation.y -= 5.0;
+        translation.y += 5.0;
     }
     if window.is_key_down(Key::Down) {
-        translation.y += 5.0;
+        translation.y -= 5.0;
     }
     if window.is_key_down(Key::S) {
         *scale += 2.0;
@@ -90,21 +90,21 @@ fn handle_input(window: &Window, translation: &mut Vec3, rotation: &mut Vec3, sc
         *scale -= 2.0;
     }
     if window.is_key_down(Key::Q) {
-        rotation.x -= PI / 5.0;
+        rotation.x -= PI / 20.0;
     }
     if window.is_key_down(Key::W) {
-        rotation.x += PI / 5.0;
+        rotation.x += PI / 20.0;
     }
     if window.is_key_down(Key::E) {
-        rotation.y -= PI / 5.0;
+        rotation.y -= PI / 20.0;
     }
     if window.is_key_down(Key::R) {
-        rotation.y += PI / 5.0;
+        rotation.y += PI / 20.0;
     }
     if window.is_key_down(Key::T) {
-        rotation.z -= PI / 5.0;
+        rotation.z -= PI / 20.0;
     }
     if window.is_key_down(Key::Y) {
-        rotation.z += PI / 5.0;
+        rotation.z += PI / 20.0;
     }
 }

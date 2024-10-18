@@ -80,7 +80,7 @@ pub fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: 
         if x < framebuffer.width && y < framebuffer.height {
             let color = fragment.color;
             framebuffer.set_current_color(color);
-            framebuffer.point(x as isize, y as isize);
+            framebuffer.point(x as isize, y as isize, fragment.depth);
         }
     }
 }

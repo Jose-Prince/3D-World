@@ -57,7 +57,7 @@ pub fn _triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
 
 pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
     let mut fragments = Vec::new();
-    let light_dir = Vec3::new(0.0, 0.0, 1.0);
+    let light_dir = Vec3::new(0.0, 0.0, -1.0);
 
     let (a, b, c) = (v1.transformed_position, v2.transformed_position, v3.transformed_position);
 
@@ -75,7 +75,7 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
             if w1 >= 0.0 && w1 <= 1.0 &&
             w2 >= 0.0 && w2 <= 1.0 &&
             w3 >= 0.0 && w3 <= 1.0 {
-                let normal = v1.transformed_normal;
+                let normal = v1.transformed_normal * w1 + v2.transformed_normal * w2 + v3.transformed_normal * w3;
                 let normal = normal.normalize();
 
                 // Calculate lighting intensity
@@ -85,7 +85,9 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
                 let base_color = Color::new(100, 100, 100);
                 let lit_color = base_color * intensity;
 
-                fragments.push(Fragment::new(x as f32, y as f32, lit_color, 0.0));
+                let depth = a.z * w1 + b.z * w2 + c.z * w3;
+
+                fragments.push(Fragment::new(x as f32, y as f32, lit_color, depth));
             }
         }
     }
