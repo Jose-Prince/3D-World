@@ -56,7 +56,7 @@ impl Camera {
         (-direction.y).atan2(radius_xz)
     }
 
-    pub fn zoom (&mut self, delta: f32) {
+    pub fn zoom(&mut self, delta: f32) {
         let direction = (self.eye - self.center).normalize();
 
         let new_eye = self.eye + direction * delta;
@@ -67,4 +67,20 @@ impl Camera {
             self.eye = new_eye;
         }
     }
+
+    pub fn move_center(&mut self, direction: Vec3) {
+        let radius_vector = self.center - self.eye;
+        let radius = radius_vector.magnitude();
+    
+        let angle_x = direction.x * 0.05; // Adjust this factor to control rotation speed
+        let angle_y = direction.y * 0.05;
+    
+        let rotated = rotate_vec3(&radius_vector, angle_x, &Vec3::new(0.0, 1.0, 0.0));
+    
+        let right = rotated.cross(&self.up).normalize();
+        let final_rotated = rotate_vec3(&rotated, angle_y, &right);
+    
+        self.center = self.eye + final_rotated.normalize() * radius;
+        self.has_changed = true;
+      }
 }
