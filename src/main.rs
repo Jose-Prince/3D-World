@@ -1,3 +1,5 @@
+//main.rs
+
 use nalgebra_glm::{Vec3, Mat4};
 use minifb::{Key, Window, WindowOptions};
 use std::time::Duration;
@@ -37,19 +39,20 @@ fn main() {
     )
     .unwrap();
 
-    let mut camera = Camera {
-        eye: Vec3::new(10.0, 10.0, 10.0),
-        center: Vec3::new(0.0, 0.0, 0.0),
-        up: Vec3::new(0.0, 1.0, 0.0), 
-    };
-
+    
     window.update();
-
+    
     framebuffer.set_background_color(Color::new(255, 255, 221));
-
+    
     let mut translation = Vec3::new(700.0, 500.0, 0.0);
     let mut rotation = Vec3::new(0.0, 0.0, 0.0);
-    let mut scale = 100.0f32;
+    let mut scale = 20.0f32;
+    
+    let mut camera = Camera {
+        eye: Vec3::new(15.0, 15.0, 15.0),
+        center: translation,
+        up: Vec3::new(0.0, 1.0, 0.0), 
+    };
 
     let obj = Obj::load("src/ship.obj").expect("Failed to load obj");
     let vertex_arrays = obj.get_vertex_array(); 
