@@ -3,6 +3,7 @@ use crate::vertex::Vertex;
 use crate::framebuffer::Framebuffer;
 use crate::line::{triangle, _triangle};
 use crate::vertex_shader::vertex_shader;
+use crate::fragment::fragment_shader;
 
 use nalgebra_glm::{Mat4, Vec2, Vec3, Vec4, look_at, perspective};
 use std::f32::consts::PI;
@@ -105,6 +106,7 @@ pub fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: 
         let x = fragment.position.x as usize;
         let y = fragment.position.y as usize;
         if x < framebuffer.width && y < framebuffer.height {
+            let shaded_color = fragment_shader(&fragment, &uniforms);
             let color = fragment.color;
             framebuffer.set_current_color(color);
             framebuffer.point(x as isize, y as isize, fragment.depth);

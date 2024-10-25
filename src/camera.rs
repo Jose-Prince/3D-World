@@ -1,10 +1,11 @@
-use nalgebra_glm::{Vec3, normalize, cross, magnitude};
+use nalgebra_glm::{Vec3, rotate_vec3, normalize, cross, magnitude};
 use std::f32::consts::PI;
 
 pub struct Camera {
     pub eye: Vec3,  // Posición de la cámara en el espacio mundial
     pub center: Vec3, // Punto que la cámara está mirando
     pub up: Vec3,  // Vector hacia arriba
+    pub has_changed: bool,
 }
 
 impl Camera {

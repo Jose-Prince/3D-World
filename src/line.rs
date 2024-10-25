@@ -26,7 +26,7 @@ pub fn line(a: &Vertex, b: &Vertex) -> Vec<Fragment> {
 
     loop {
         let z = start.z + (end.z - start.z) * (x0 - start.x as i32) as f32 / (end.x - start.x) as f32;
-        fragments.push(Fragment::new(x0 as f32, y0 as f32, Color::new(0, 0, 0), z));
+        //fragments.push(Fragment::new(x0 as f32, y0 as f32, Color::new(0, 0, 0), z));
 
         if x0 == x1 && y0 == y1 { break; }
 
@@ -87,7 +87,14 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
 
                 let depth = a.z * w1 + b.z * w2 + c.z * w3;
 
-                fragments.push(Fragment::new(x as f32, y as f32, lit_color, depth));
+                fragments.push(Fragment::new(
+                    x as f32, 
+                    y as f32, 
+                    lit_color, 
+                    depth,
+                    normal,
+                    intensity,
+                ));
             }
         }
     }

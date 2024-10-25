@@ -1,6 +1,6 @@
 //main.rs
 
-use nalgebra_glm::{Vec3, Mat4};
+use nalgebra_glm::Vec3;
 use minifb::{Key, Window, WindowOptions};
 use std::time::Duration;
 use std::f32::consts::PI;
@@ -52,6 +52,7 @@ fn main() {
         eye: Vec3::new(15.0, 15.0, 15.0),
         center: translation,
         up: Vec3::new(0.0, 1.0, 0.0), 
+        has_changed: true,
     };
 
     let obj = Obj::load("src/ship.obj").expect("Failed to load obj");
