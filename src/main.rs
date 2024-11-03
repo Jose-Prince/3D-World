@@ -18,10 +18,7 @@ mod render;
 
 use color::Color;
 use framebuffer::Framebuffer;
-use vertex::Vertex;
 use obj::Obj;
-use triangule::triangle;
-use shader::vertex_shader;
 use camera::Camera;
 use crate::render::{Uniforms, render, create_model_matrix, create_view_matrix, create_perspective_matrix, create_viewport_matrix};
 
