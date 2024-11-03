@@ -1,9 +1,8 @@
 //render.rs
 use crate::vertex::Vertex;
 use crate::framebuffer::Framebuffer;
-use crate::line::{triangle, _triangle};
-use crate::vertex_shader::vertex_shader;
-use crate::fragment::fragment_shader;
+use crate::triangule::triangle;
+use crate::shader::{vertex_shader, fragment_shader};
 
 use nalgebra_glm::{Mat4, Vec2, Vec3, Vec4, look_at, perspective};
 use std::f32::consts::PI;
@@ -13,6 +12,7 @@ pub struct Uniforms {
     pub view_matrix: Mat4,
     pub projection_matrix: Mat4,
     pub viewport_matrix: Mat4,
+    pub time: u32,
 }
 
 pub fn create_viewport_matrix(width: f32, height: f32) -> Mat4 {
@@ -107,7 +107,7 @@ pub fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: 
         let y = fragment.position.y as usize;
         if x < framebuffer.width && y < framebuffer.height {
             let shaded_color = fragment_shader(&fragment, &uniforms);
-            let color = fragment.color;
+            let color = shaded_color;
             framebuffer.set_current_color(color);
             framebuffer.point(x as isize, y as isize, fragment.depth);
         }

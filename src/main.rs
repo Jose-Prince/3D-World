@@ -6,12 +6,12 @@ use std::time::Duration;
 use std::f32::consts::PI;
 
 mod framebuffer;
-mod line;
+mod triangule;
 mod vertex;
 mod obj;
 mod color;
 mod fragment;
-mod vertex_shader;
+mod shader;
 mod camera;
 mod bmp;
 mod render;
@@ -20,8 +20,8 @@ use color::Color;
 use framebuffer::Framebuffer;
 use vertex::Vertex;
 use obj::Obj;
-use line::triangle;
-use vertex_shader::vertex_shader;
+use triangule::triangle;
+use shader::vertex_shader;
 use camera::Camera;
 use crate::render::{Uniforms, render, create_model_matrix, create_view_matrix, create_perspective_matrix, create_viewport_matrix};
 
@@ -57,11 +57,14 @@ fn main() {
 
     let obj = Obj::load("src/ship.obj").expect("Failed to load obj");
     let vertex_arrays = obj.get_vertex_array(); 
+    let mut time = 0;
 
     while window.is_open() {
         if window.is_key_down(Key::Escape) {
             break;
         }
+
+        time += 1;
 
         handle_input(&window, &mut translation, &mut rotation, &mut scale);
 
@@ -76,6 +79,7 @@ fn main() {
             view_matrix,
             projection_matrix,
             viewport_matrix,
+            time,
         };
 
         framebuffer.set_current_color(Color::new(0,0,0));

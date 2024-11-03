@@ -1,4 +1,4 @@
-use nalgebra_glm::{Vec3, rotate_vec3, normalize, cross, magnitude};
+use nalgebra_glm::{Vec3, rotate_vec3};
 use std::f32::consts::PI;
 
 pub struct Camera {
