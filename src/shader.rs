@@ -47,14 +47,18 @@ pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
 
 pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
     
-    //fragment.color * fragment.intensity
+    fragment.color * fragment.intensity
     //stripe_shader(fragment, uniforms)
     //transformed_shader(fragment, uniforms)
     //lerp_stripe_shader(fragment, uniforms)
     //wave_colot_shader(fragment, uniforms)
     //disco_ball_shader(fragment, uniforms)
     //moving_polka_dot_shader(fragment, uniforms)
-    moving_horizontal_stripes_shader(fragment, uniforms)
+    //moving_horizontal_stripes_shader(fragment, uniforms)
+    //neon_light_shader(fragment)
+    //core_shader(fragment)
+    //glow_shader(fragment)
+    //purple_shader(fragment)
 }
 
 pub fn stripe_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
@@ -278,4 +282,136 @@ pub fn disco_ball_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
     // Combine base color, tile pattern, lighting, and moving lights
     let tile_color = base_color.lerp(&light_color, tile_pattern * light_intensity);
     tile_color.lerp(&light_color, light_factor * 0.7) * fragment.intensity
+}
+
+fn static_pattern_shader(fragment: &Fragment) -> Color {
+  let x = fragment.vertex_position.x;
+  let y = fragment.vertex_position.y;
+
+  let pattern = ((x * 10.0).sin() * (y * 10.0).sin()).abs();
+
+  let r = (pattern * 255.0) as i32;
+  let g = ((1.0 - pattern) * 255.0) as i32;
+  let b = 128;
+
+  Color::new(r, g, b)
+}
+
+fn moving_circles_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+  let x = fragment.vertex_position.x;
+  let y = fragment.vertex_position.y;
+
+  let time = uniforms.time as f32 * 0.05;
+  let circle1_x = (time.sin() * 0.4 + 0.5) % 1.0;
+  let circle2_x = (time.cos() * 0.4 + 0.5) % 1.0;
+
+  let dist1 = ((x - circle1_x).powi(2) + (y - 0.3).powi(2)).sqrt();
+  let dist2 = ((x - circle2_x).powi(2) + (y - 0.7).powi(2)).sqrt();
+
+  let circle_size = 0.1;
+  let circle1 = if dist1 < circle_size { 1.0f32 } else { 0.0f32 };
+  let circle2 = if dist2 < circle_size { 1.0f32 } else { 0.0f32 };
+
+  let circle_intensity = (circle1 + circle2).min(1.0f32);
+
+  Color::new(
+    (circle_intensity * 255.0) as i32,
+    (circle_intensity * 255.0) as i32,
+    (circle_intensity * 255.0) as i32
+  )
+}
+
+// Combined shader
+pub fn combined_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+  let base_color = static_pattern_shader(fragment);
+  let circle_color = moving_circles_shader(fragment, uniforms);
+
+  // Combine shaders: use circle color if it's not black, otherwise use base color
+  if !circle_color.is_black() {
+    circle_color * fragment.intensity
+  } else {
+    base_color * fragment.intensity
+  }
+}
+
+// Simple purple shader
+fn purple_shader(_fragment: &Fragment) -> Color {
+  Color::new(128, 0, 128) // Purple color
+}
+
+// Circle shader
+fn circle_shader(fragment: &Fragment) -> Color {
+  let x = fragment.vertex_position.x;
+  let y = fragment.vertex_position.y;
+  let distance = (x * x + y * y).sqrt();
+
+  if distance < 0.25 { // Circle radius
+    Color::new(255, 255, 0) // Yellow circle
+  } else {
+    Color::new(0, 0, 0) // Black (transparent) background
+  }
+}
+
+// Combined shader with blend mode parameter
+pub fn combined_blend_shader(fragment: &Fragment, blend_mode: &str) -> Color {
+  let base_color = purple_shader(fragment);
+  let circle_color = circle_shader(fragment);
+
+  let combined_color = match blend_mode {
+    "normal" => base_color.blend_normal(&circle_color),
+    "multiply" => base_color.blend_multiply(&circle_color),
+    "add" => base_color.blend_add(&circle_color),
+    "subtract" => base_color.blend_subtract(&circle_color),
+    _ => base_color // Default to base color if unknown blend mode
+  };
+
+  combined_color * fragment.intensity
+}
+
+fn glow_shader(fragment: &Fragment) -> Color {
+    let y = fragment.vertex_position.y;
+    let stripe_width = 0.2;
+    let glow_size = 0.05; 
+    
+    let distance_to_center = (y % stripe_width - stripe_width / 2.0).abs();
+    let glow_intensity = ((1.0 - (distance_to_center / glow_size).min(1.0)) * PI / 2.0).sin();
+    
+    // Neon blue color for the glow
+    Color::new(
+        (0.0 * glow_intensity * 255.0) as i32,
+        (0.5 * glow_intensity * 255.0) as i32,
+        (glow_intensity * 255.0) as i32
+    )
+}
+
+fn core_shader(fragment: &Fragment) -> Color {
+    let y = fragment.vertex_position.y;
+    let stripe_width = 0.2;
+    let core_size = 0.02;
+    
+    let distance_to_center = (y % stripe_width - stripe_width / 2.0).abs();
+    let core_intensity = if distance_to_center < core_size { 1.0 } else { 0.0 };
+    
+    Color::new(
+        (0.8 * core_intensity * 255.0) as i32,
+        (0.9 * core_intensity * 255.0) as i32,
+        (core_intensity * 255.0) as i32
+    )
+}
+
+fn background_shader(_fragment: &Fragment) -> Color {
+    Color::new(10, 10, 20) // Dark blue background
+}
+
+// Combined neon light shader
+pub fn neon_light_shader(fragment: &Fragment) -> Color {
+    let background = background_shader(fragment);
+    let glow = glow_shader(fragment);
+    let core = core_shader(fragment);
+    
+    // Blend the glow with the background using "screen" blend mode
+    let blended_glow = background.blend_screen(&glow);
+    
+    // Add the core on top using "add" blend mode
+    blended_glow.blend_add(&core) * fragment.intensity
 }
