@@ -21,6 +21,53 @@ use framebuffer::Framebuffer;
 use obj::Obj;
 use camera::Camera;
 use crate::render::{Uniforms, render, create_model_matrix, create_view_matrix, create_perspective_matrix, create_viewport_matrix};
+use fastnoise_lite::{FastNoiseLite, NoiseType, FractalType};
+
+fn create_noise() -> FastNoiseLite {
+    //create_cloud_noise()
+    create_lava_noise()
+}
+
+fn create_cloud_noise() -> FastNoiseLite {
+    let mut noise = FastNoiseLite::with_seed(1337);
+    noise.set_noise_type(Some(NoiseType::Cellular));
+    noise
+}
+
+fn create_cell_noise() -> FastNoiseLite {
+    let mut noise = FastNoiseLite::with_seed(1337);
+    noise.set_noise_type(Some(NoiseType::Cellular));
+    noise.set_frequency(Some(0.1));
+    noise
+}
+
+fn create_ground_noise() -> FastNoiseLite {
+    let mut noise = FastNoiseLite::with_seed(1337);
+    
+    // Use FBm fractal type to layer multiple octaves of noise
+    noise.set_noise_type(Some(NoiseType::Cellular)); // Cellular noise for cracks
+    noise.set_fractal_type(Some(FractalType::FBm));  // Fractal Brownian Motion
+    noise.set_fractal_octaves(Some(5));              // More octaves = more detail
+    noise.set_fractal_lacunarity(Some(2.0));         // Lacunarity controls frequency scaling
+    noise.set_fractal_gain(Some(0.5));               // Gain controls amplitude scaling
+    noise.set_frequency(Some(0.05));                 // Lower frequency for larger features
+
+    noise
+}
+
+fn create_lava_noise() -> FastNoiseLite {
+    let mut noise = FastNoiseLite::with_seed(42);
+    
+    // Use FBm for multi-layered noise, giving a "turbulent" feel
+    noise.set_noise_type(Some(NoiseType::Perlin));  // Perlin noise for smooth, natural texture
+    noise.set_fractal_type(Some(FractalType::FBm)); // FBm for layered detail
+    noise.set_fractal_octaves(Some(6));             // High octaves for rich detail
+    noise.set_fractal_lacunarity(Some(2.0));        // Higher lacunarity = more contrast between layers
+    noise.set_fractal_gain(Some(0.5));              // Higher gain = more influence of smaller details
+    noise.set_frequency(Some(0.002));                // Low frequency = large features
+    
+    noise
+}
 
 fn main() {
     let width = 900;
@@ -52,7 +99,7 @@ fn main() {
         has_changed: true,
     };
 
-    let obj = Obj::load("src/ship.obj").expect("Failed to load obj");
+    let obj = Obj::load("src/sphere.obj").expect("Failed to load obj");
     let vertex_arrays = obj.get_vertex_array(); 
     let mut time = 0;
 
@@ -67,6 +114,7 @@ fn main() {
 
         framebuffer.clear();
 
+        let noise = create_noise();
         let model_matrix = create_model_matrix(translation, scale, rotation);
         let view_matrix = create_view_matrix(camera.eye, camera.center, camera.up);
         let projection_matrix = create_perspective_matrix(width as f32, height as f32);
@@ -77,6 +125,7 @@ fn main() {
             projection_matrix,
             viewport_matrix,
             time,
+            noise,
         };
 
         framebuffer.set_current_color(Color::new(0,0,0));

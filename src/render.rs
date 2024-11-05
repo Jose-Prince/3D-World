@@ -5,6 +5,7 @@ use crate::triangule::triangle;
 use crate::shader::{vertex_shader, fragment_shader};
 
 use nalgebra_glm::{Mat4, Vec2, Vec3, Vec4, look_at, perspective};
+use fastnoise_lite::{FastNoiseLite, NoiseType, FractalType};
 use std::f32::consts::PI;
 
 pub struct Uniforms {
@@ -13,6 +14,7 @@ pub struct Uniforms {
     pub projection_matrix: Mat4,
     pub viewport_matrix: Mat4,
     pub time: u32,
+    pub noise: FastNoiseLite
 }
 
 pub fn create_viewport_matrix(width: f32, height: f32) -> Mat4 {
