@@ -24,8 +24,55 @@ use crate::render::{Uniforms, render, create_model_matrix, create_view_matrix, c
 use fastnoise_lite::{FastNoiseLite, NoiseType, FractalType};
 
 fn create_noise() -> FastNoiseLite {
+    create_earth_noise()
+    //create_magma_noise()
+    //create_ice_noise()
     //create_cloud_noise()
-    create_lava_noise()
+    //create_lava_noise()
+    //create_ground_noise()
+    //create_cell_noise()
+    //create_star_noise()
+}
+
+fn create_earth_noise() -> FastNoiseLite {
+    let mut noise = FastNoiseLite::with_seed(1345);
+
+    noise.set_noise_type(Some(NoiseType::Perlin));
+    noise.set_frequency(Some(0.005));
+    noise.set_fractal_type(Some(FractalType::FBm));
+    noise.set_fractal_octaves(Some(4));
+    noise.set_fractal_gain(Some(0.5));
+    noise.set_fractal_lacunarity(Some(2.0));
+
+    noise
+}
+
+fn create_magma_noise() -> FastNoiseLite {
+    let mut noise = FastNoiseLite::with_seed(51);
+
+    noise.set_noise_type(Some(NoiseType::Perlin));
+    noise.set_fractal_type(Some(FractalType::FBm));
+    noise.set_fractal_octaves(Some(5));
+    noise.set_fractal_lacunarity(Some(2.5));
+    noise.set_fractal_gain(Some(0.5));
+    noise.set_frequency(Some(0.002));
+
+    noise
+}
+
+fn create_ice_noise() -> FastNoiseLite {
+    let mut noise = FastNoiseLite::with_seed(42);
+    noise.set_noise_type(Some(NoiseType::OpenSimplex2));
+    noise.set_fractal_type(Some(FractalType::Ridged));
+    noise.set_frequency(Some(2.5));
+    noise
+}
+
+fn create_star_noise() -> FastNoiseLite {
+    let mut noise = FastNoiseLite::with_seed(1254);
+    noise.set_noise_type(Some(NoiseType::Perlin));
+    noise.set_frequency(Some(0.1));
+    noise
 }
 
 fn create_cloud_noise() -> FastNoiseLite {
@@ -90,7 +137,7 @@ fn main() {
     
     let mut translation = Vec3::new(700.0, 500.0, 0.0);
     let mut rotation = Vec3::new(0.0, 0.0, 0.0);
-    let mut scale = 20.0f32;
+    let mut scale = 500.0f32;
     
     let mut camera = Camera {
         eye: Vec3::new(15.0, 15.0, 15.0),

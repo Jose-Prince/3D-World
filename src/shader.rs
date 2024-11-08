@@ -1,5 +1,5 @@
-// vertex_shader.rs
-use nalgebra_glm::{Vec3, Vec4, Mat3, mat4_to_mat3, dot};
+//shader.rs
+use nalgebra_glm::{Vec2, Vec3, Vec4, Mat3, mat4_to_mat3, dot};
 use crate::vertex::Vertex;
 use crate::render::Uniforms;
 use crate::color::Color;
@@ -49,10 +49,17 @@ pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
 }
 
 pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
-    
+    planet_shader(fragment, uniforms)
+    //earth_shader(fragment, uniforms)
+    //magma_shader(fragment, uniforms)
+    //combined_ice_cloud_shader(fragment, uniforms)
+    //ice_shader(fragment, uniforms)
+    //asteroid_shader(fragment, uniforms)
+    //star_shader(fragment, uniforms)
+    //mustafar_shader(fragment, uniforms)
     //fragment.color * fragment.intensity
     //stripe_shader(fragment, uniforms)
-    lava_shader(fragment, uniforms)
+    //lava_shader(fragment, uniforms)
     //cloud_shader(fragment, uniforms)
     //transformed_shader(fragment, uniforms)
     //lerp_stripe_shader(fragment, uniforms)
@@ -63,7 +70,262 @@ pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
     //neon_light_shader(fragment)
     //core_shader(fragment)
     //glow_shader(fragment)
+    //cellular_shader(fragment, uniforms)
     //purple_shader(fragment)
+}
+fn ocean_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    // Color base para el océano (azul alienígena)
+    let ocean_color = Color::new(0, 0, 150); 
+    let noise_value = uniforms.noise.get_noise_2d(fragment.position.x * 5.0, fragment.position.y * 5.0);
+    let intensity = (0.7 + 0.3 * noise_value) as f32; // Intensidad variada por el ruido
+    ocean_color * intensity * fragment.intensity
+}
+
+fn continents_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    // Colores para el terreno rocoso
+    let base_color = Color::new(150, 75, 0);  // Color tierra marrón
+    let rocky_color = Color::new(100, 100, 100); // Color gris para áreas rocosas
+
+    // Ruido para simular montañas y valles
+    let noise_value = uniforms.noise.get_noise_2d(fragment.position.x * 2.0, fragment.position.y * 2.0);
+    let terrain_color = base_color.lerp(&rocky_color, (noise_value * 0.5 + 0.5) as f32);
+
+    terrain_color * fragment.intensity
+}
+
+fn atmosphere_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    // Colores de la atmósfera (suave brillo)
+    let atmosphere_color = Color::new(50, 100, 200); // Un azul brillante
+    let noise_value = uniforms.noise.get_noise_2d(fragment.position.x * 0.5, fragment.position.y * 0.5);
+    let intensity = (0.5 + 0.5 * noise_value) as f32; // Atmósfera con variaciones sutiles
+    atmosphere_color * intensity * fragment.intensity
+}
+
+fn clouds_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    // Colores de las nubes (blanco y suave)
+    let cloud_color = Color::new(255, 255, 255);
+    let cloud_noise = uniforms.noise.get_noise_3d(
+        fragment.position.x * 2.0 + uniforms.time as f32 * 0.1,
+        fragment.position.y * 2.0 + uniforms.time as f32 * 0.1,
+        fragment.depth
+    );
+
+    let cloud_intensity = ((cloud_noise * 0.5 + 0.5) * 0.5).clamp(0.0, 0.3) as f32; // Nubes sutiles
+    cloud_color * cloud_intensity * 0.7
+}
+
+fn planet_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    // Capa del océano
+    let ocean_color = ocean_layer(fragment, uniforms);
+    
+    // Capa de los continentes (terreno rocoso)
+    let continents_color = continents_layer(fragment, uniforms);
+
+    // Capa de la atmósfera
+    let atmosphere_color = atmosphere_layer(fragment, uniforms);
+
+    // Capa de nubes
+    let clouds_color = clouds_layer(fragment, uniforms);
+
+    // Combinamos las capas en un orden adecuado
+    let base_color = if continents_color.is_equal(&ocean_color) {
+        continents_color
+    } else {
+        ocean_color
+    };
+
+    // Primero combinamos las nubes con el planeta
+    let planet_with_clouds = clouds_color.blend_with(&base_color);
+
+    // Luego combinamos la atmósfera
+    let final_color = atmosphere_color.blend_with(&planet_with_clouds);
+
+    // Devuelve el color final con la intensidad de fragmento
+    final_color 
+}
+
+fn ocean_layer2(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    let ocean_color = Color::new(0, 105, 148);
+    let noise_value = uniforms.noise.get_noise_2d(fragment.position.x * 10.0, fragment.position.y * 10.0);
+    let intensity = (0.8 + 0.2 * noise_value) as f32;
+    ocean_color * intensity * fragment.intensity
+}
+
+fn continents_layer2(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    let land_color = Color::new(34,139,34);
+    let desert_color = Color::new(194, 178, 128);
+    let noise_value = uniforms.noise.get_noise_2d(fragment.position.x * 5.0, fragment.position.y * 5.0);
+    land_color.lerp(&desert_color, (noise_value * 0.5 + 0.5) as f32) * fragment.intensity
+}
+
+fn clouds_layer2(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    let cloud_color = Color::new(255,255,255);
+    let cloud_noise = uniforms.noise.get_noise_3d(
+        fragment.position.x * 2.0 + uniforms.time as f32 * 0.1,
+        fragment.position.y * 2.0 + uniforms.time as f32 * 0.1,
+        fragment.depth
+    );
+
+    let cloud_intensity = ((cloud_noise * 0.5 +0.5) * 0.8).clamp(0.0, 0.1) as f32;
+    cloud_color * cloud_intensity * 0.7
+}
+
+fn earth_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    let ocean_color = ocean_layer2(fragment, uniforms);
+    let continents_color = continents_layer2(fragment, uniforms);
+    let clouds_color = clouds_layer2(fragment, uniforms);
+
+    if !continents_color.is_equal(&ocean_color) {
+        let land_or_ocean = continents_color;
+
+        if clouds_color.is_black() {
+            land_or_ocean
+        } else {
+            clouds_color.blend_with(&land_or_ocean)
+        }
+    } else {
+        if clouds_color.is_black() {
+            ocean_color
+        } else {
+            clouds_color.blend_with(&ocean_color)
+        }
+    }
+}
+
+pub fn magma_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    let bright_color = Color::new(255, 100, 0);
+    let dark_color = Color::new(50,10,0);
+
+    let position = Vec3::new(
+        fragment.vertex_position.x,
+        fragment.vertex_position.y,
+        fragment.depth,
+    );
+
+    let base_frequency = 0.3;
+    let pulsate_amplitude = 0.7;
+    let t = uniforms.time as f32 * 0.02;
+
+    let pulsate = (t * base_frequency).sin() * pulsate_amplitude;
+
+    let zoom = 800.0;
+    let noise_value1 = uniforms.noise.get_noise_3d(
+        position.x * zoom,
+        position.y * zoom,
+        (position.z + pulsate) * zoom,
+    );
+
+    let noise_value2 = uniforms.noise.get_noise_3d(
+        (position.x +1000.0) * zoom,
+        (position.y +1000.0) * zoom,
+        (position.z + 2000.0 + pulsate) * zoom,
+    );
+
+    let noise_value = (noise_value1 + noise_value2) * 0.5;
+
+    let color = dark_color.lerp(&bright_color, noise_value);
+
+    color  
+}
+
+pub fn combined_ice_cloud_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    let ice_color = ice_shader(fragment, uniforms);
+    let cloud_color = cloud_ice_shader(fragment, uniforms);
+
+    if !cloud_color.is_black() {
+        cloud_color * fragment.intensity + ice_color * 0.7
+    } else {
+        ice_color * fragment.intensity
+    }
+}
+
+pub fn cloud_ice_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    let uv = fragment.position;
+
+    let speed = 0.01;
+    let scale = 3.0;
+
+    let moving_x = uv.x * scale + uniforms.time as f32 * speed;
+    let noise_value = uniforms.noise.get_noise_2d(moving_x, uv.y * scale);
+
+    let cloud_intensity = (200.0 * (noise_value * 0.5 +0.5)).clamp(0.0, 255.0);
+
+    Color::new(
+        cloud_intensity as i32,
+        cloud_intensity as i32,
+        cloud_intensity as i32,
+    )
+}
+
+pub fn ice_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    let uv = fragment.position;
+
+    let noise_value = uniforms.noise.get_noise_2d(uv.x * 4.0, uv.y * 4.0);
+
+    let blue_intensity = (180.0 + 60.0 * (noise_value * 0.5 + 0.5)).clamp(0.0, 255.0);
+    let white_intensity = (200.0 + 30.0 * (noise_value * 0.5 + 0.5)).clamp(180.0, 255.0);
+
+    Color::new(
+        white_intensity as i32,
+        (white_intensity * 0.95) as i32,
+        blue_intensity as i32,
+    )
+}
+
+pub fn asteroid_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    let uv = fragment.position;
+
+    let noise_value = uniforms.noise.get_noise_2d(uv.x * 10.0, uv.y * 10.0);
+
+    let base_color_intensity = (80.0 + 40.0 * fragment.intensity * (noise_value * 0.5 + 0.5)).clamp(0.0, 120.0);
+
+    Color::new(
+        base_color_intensity as i32,
+        (base_color_intensity * 0.9) as i32,
+        (base_color_intensity * 0.7) as i32,
+    )
+}
+
+pub fn star_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    let uv = fragment.position;
+    let noise_value = uniforms.noise.get_noise_2d(uv.x * 5.0, uv.y * 5.0);
+
+    let red_intensity = 255 - (50.0 * (noise_value * 0.5 + 0.5)).clamp(0.0, 50.0) as i32;
+    let green_intensity = 180 - (50.0 * (noise_value * 0.5 + 0.5)).clamp(0.0, 50.0) as i32;
+   Color::new(
+        (red_intensity ) as i32,
+        (green_intensity ) as i32,
+        (40.0 ) as i32,
+    ) 
+}
+
+pub fn mustafar_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    //UV coordinates
+    let uv = fragment.position;
+
+    //noise animation
+    let time_factor = uniforms.time as f32 * 0.01;
+
+    //cellular noise for the cracks
+    let crack_noise = uniforms.noise.get_noise_2d(uv.x * 0.3, uv.y * 0.3 + time_factor);
+
+    //magma noise
+    let magma_noise = uniforms.noise.get_noise_2d(uv.x * 1.1 + time_factor, uv.y * 1.1 - time_factor);
+
+    //Mapping the noise of magma color
+    let lava_intensity = ((magma_noise * 0.5 + 0.5) * fragment.intensity * 255.0) as u8;
+    let crack_intensity = ((crack_noise * 0.5 +0.5) * 255.0) as u8;
+
+    let shadow_factor = (fragment.depth * 0.8 + fragment.normal.z * 0.2) as f32;
+    let shadow_color = (30.0 * shadow_factor) as u8;
+
+    if crack_intensity < 100 {
+        Color::new(shadow_color as i32, (crack_intensity / 2) as i32, shadow_color as i32)
+    } else if crack_intensity < 150 {
+        Color::new(120, (lava_intensity / 2) as i32, 40)
+    } else {
+        Color::new(255, lava_intensity as i32, (lava_intensity / 3) as i32)
+    }
 }
 
 pub fn stripe_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {

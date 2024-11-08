@@ -96,6 +96,18 @@ impl Color {
             255 - ((255 - self.b as u16) * (255 - blend.b as u16) / 255) as i32,
         )
     }
+
+    pub fn blend_with(&self, other: &Color) -> Color {
+        let r = (self.r as f32 * 0.5 + other.r as f32 * 0.5) as i32;
+        let g = (self.g as f32 * 0.5 + other.g as f32 * 0.5) as i32;
+        let b = (self.b as f32 * 0.5 + other.b as f32 * 0.5) as i32;
+
+        Color::new(r,g,b)
+    }
+
+    pub fn is_equal(&self, other: &Color) -> bool {
+        self.r == other.r && self.g == other.g && self.b == other.b
+    }
 }
 
 impl fmt::Display for Color {

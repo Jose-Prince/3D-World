@@ -5,7 +5,7 @@ use crate::triangule::triangle;
 use crate::shader::{vertex_shader, fragment_shader};
 
 use nalgebra_glm::{Mat4, Vec2, Vec3, Vec4, look_at, perspective};
-use fastnoise_lite::{FastNoiseLite, NoiseType, FractalType};
+use fastnoise_lite::FastNoiseLite;
 use std::f32::consts::PI;
 
 pub struct Uniforms {
