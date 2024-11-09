@@ -48,8 +48,22 @@ pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
     }
 }
 
-pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
-    planet_shader(fragment, uniforms)
+pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms, option: u8) -> Color {
+    if option == 1 {
+        return earth_shader(fragment, uniforms);
+    } else if option == 2 {
+        return magma_shader(fragment, uniforms); 
+    } else if option == 3 {
+        return combined_ice_cloud_shader(fragment, uniforms);
+    } else if option == 4 {
+        return asteroid_shader(fragment, uniforms); 
+    } else if option == 5 {
+        return lava_shader(fragment, uniforms); 
+    } else if option == 6 {
+        return planet_shader(fragment, uniforms);
+    } else {
+        return star_shader(fragment, uniforms);
+    }
     //earth_shader(fragment, uniforms)
     //magma_shader(fragment, uniforms)
     //combined_ice_cloud_shader(fragment, uniforms)

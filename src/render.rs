@@ -77,7 +77,7 @@ pub fn create_model_matrix(translation: Vec3, scale: f32, rotation: Vec3) -> Mat
     transform_matrix * rotation_matrix
 }
 
-pub fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex]) {
+pub fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex], option : u8) {
     // Vertex Shader Stage
     let mut transformed_vertices = Vec::with_capacity(vertex_array.len());
     for vertex in vertex_array {
@@ -108,7 +108,7 @@ pub fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: 
         let x = fragment.position.x as usize;
         let y = fragment.position.y as usize;
         if x < framebuffer.width && y < framebuffer.height {
-            let shaded_color = fragment_shader(&fragment, &uniforms);
+            let shaded_color = fragment_shader(&fragment, &uniforms, option);
             let color = shaded_color;
             framebuffer.set_current_color(color);
             framebuffer.point(x as isize, y as isize, fragment.depth);

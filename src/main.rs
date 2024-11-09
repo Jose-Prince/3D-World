@@ -23,15 +23,22 @@ use camera::Camera;
 use crate::render::{Uniforms, render, create_model_matrix, create_view_matrix, create_perspective_matrix, create_viewport_matrix};
 use fastnoise_lite::{FastNoiseLite, NoiseType, FractalType};
 
-fn create_noise() -> FastNoiseLite {
-    create_earth_noise()
-    //create_magma_noise()
-    //create_ice_noise()
-    //create_cloud_noise()
-    //create_lava_noise()
-    //create_ground_noise()
-    //create_cell_noise()
-    //create_star_noise()
+fn create_noise(option: u8) -> FastNoiseLite {
+    if option == 1 {
+        create_earth_noise()
+    } else if option == 2 {
+        create_magma_noise()
+    } else if option == 3 {
+        create_ice_noise()
+    } else if option == 4 {
+        create_lava_noise()
+    } else if option == 5 {
+        create_ground_noise()
+    } else if option == 6 {
+        create_earth_noise()        
+    } else {
+        create_star_noise()
+    }
 }
 
 fn create_earth_noise() -> FastNoiseLite {
@@ -133,7 +140,7 @@ fn main() {
     
     window.update();
     
-    framebuffer.set_background_color(Color::new(255, 255, 221));
+    framebuffer.set_background_color(Color::new(0, 0, 0));
     
     let mut translation = Vec3::new(700.0, 500.0, 0.0);
     let mut rotation = Vec3::new(0.0, 0.0, 0.0);
@@ -161,7 +168,9 @@ fn main() {
 
         framebuffer.clear();
 
-        let noise = create_noise();
+        let option = handle_planet(&window);
+
+        let noise = create_noise(option);
         let model_matrix = create_model_matrix(translation, scale, rotation);
         let view_matrix = create_view_matrix(camera.eye, camera.center, camera.up);
         let projection_matrix = create_perspective_matrix(width as f32, height as f32);
@@ -176,7 +185,7 @@ fn main() {
         };
 
         framebuffer.set_current_color(Color::new(0,0,0));
-        render(&mut framebuffer, &uniforms, &vertex_arrays);
+        render(&mut framebuffer, &uniforms, &vertex_arrays, option);
 
         window
             .update_with_buffer(&framebuffer.buffer, width, height)
@@ -222,5 +231,23 @@ fn handle_input(window: &Window, translation: &mut Vec3, rotation: &mut Vec3, sc
     }
     if window.is_key_down(Key::Y) {
         rotation.z += PI / 20.0;
+    }
+}
+
+fn handle_planet(window: &Window) -> u8 {
+    if window.is_key_down(Key::Key1){
+       return 1; 
+    } else if window.is_key_down(Key::Key2) {
+        return 2;
+    }  else if window.is_key_down(Key::Key3) {
+        return 3;
+    } else if window.is_key_down(Key::Key4) {
+        return 4;
+    } else if window.is_key_down(Key::Key5) {
+        return 5;
+    } else if window.is_key_down(Key::Key6) {
+        return 6;
+    }else {
+        return 7;
     }
 }
