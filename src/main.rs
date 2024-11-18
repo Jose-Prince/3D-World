@@ -133,20 +133,20 @@ fn main() {
     
     window.update();
     
-    framebuffer.set_background_color(Color::new(255, 255, 221));
+    framebuffer.set_background_color(Color::new(0, 0, 0));
     
-    let mut translation = Vec3::new(700.0, 500.0, 0.0);
-    let mut rotation = Vec3::new(0.0, 0.0, 0.0);
-    let mut scale = 500.0f32;
+    let mut translation = Vec3::new(50.0, 0.0, 0.0);
+    let mut rotation = Vec3::new(3.3, 0.0, 0.0);
+    let mut scale = 20.0f32;
     
     let mut camera = Camera {
-        eye: Vec3::new(15.0, 15.0, 15.0),
-        center: translation,
+        eye: Vec3::new(0.0, 0.0, 500.0),
+        center: Vec3::new(0.0, 0.0, 0.0),
         up: Vec3::new(0.0, 1.0, 0.0), 
         has_changed: true,
     };
 
-    let obj = Obj::load("src/sphere.obj").expect("Failed to load obj");
+    let obj = Obj::load("src/ship.obj").expect("Failed to load obj");
     let vertex_arrays = obj.get_vertex_array(); 
     let mut time = 0;
 

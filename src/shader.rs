@@ -49,7 +49,8 @@ pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
 }
 
 pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
-    planet_shader(fragment, uniforms)
+    spaceship_shader(fragment, uniforms)
+    //planet_shader(fragment, uniforms)
     //earth_shader(fragment, uniforms)
     //magma_shader(fragment, uniforms)
     //combined_ice_cloud_shader(fragment, uniforms)
@@ -73,6 +74,78 @@ pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
     //cellular_shader(fragment, uniforms)
     //purple_shader(fragment)
 }
+
+fn hull_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    // Color base del casco metálico
+    let base_color = Color::new(80, 80, 100); // Gris metálico
+    let highlight_color = Color::new(200, 200, 220); // Resaltado
+
+    // Simulación de reflejos metálicos con ruido
+    let noise_value = uniforms.noise.get_noise_2d(fragment.position.x * 3.0, fragment.position.y * 3.0);
+    let metallic_shine = base_color.lerp(&highlight_color, (noise_value * 0.5 + 0.5) as f32);
+
+    // Intensidad de luz especular (simulada)
+    let light_direction = Vec3::new(0.5, 0.5, 0.0).normalize();
+    let fragment_normal = fragment.normal.normalize();
+    let specular_intensity = light_direction.dot(&fragment_normal).clamp(0.0, 1.0);
+
+    metallic_shine * (0.6 + 0.4 * specular_intensity) * fragment.intensity
+}
+
+fn engine_glow_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    // Brillo de los motores (azul vibrante)
+    let engine_glow_color = Color::new(50, 150, 255); // Azul eléctrico
+    let noise_value = uniforms.noise.get_noise_3d(
+        fragment.position.x * 10.0,
+        fragment.position.y * 10.0,
+        uniforms.time as f32 * 0.2,
+    );
+
+    let glow_intensity = (noise_value * 0.5 + 0.5).clamp(0.0, 1.0);
+    engine_glow_color * glow_intensity * 0.8
+}
+
+fn scratches_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    // Simulación de rayones en el casco
+    let scratch_color = Color::new(30, 30, 40); // Oscuro, casi negro
+    let noise_value = uniforms.noise.get_noise_2d(fragment.position.x * 20.0, fragment.position.y * 20.0);
+
+    // Sólo aplicamos rayones en ciertas áreas
+    let scratch_intensity = if noise_value > 0.6 { 1.0 } else { 0.0 };
+
+    scratch_color * scratch_intensity
+}
+
+fn spaceship_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+    // Capa del casco metálico
+    let hull_color = hull_layer(fragment, uniforms);
+
+    // Capa de brillo en los motores
+    let engine_glow_color = engine_glow_layer(fragment, uniforms);
+
+    // Capa de rayones
+    let scratches_color = scratches_layer(fragment, uniforms);
+
+    let light_direction = Vec3::new(0.5, 0.5, -0.5).normalize();
+    let fragment_normal = fragment.normal.normalize();
+    let diffuse_intensity = light_direction.dot(&fragment_normal).clamp(0.0, 1.0);
+
+    let ambient_intensity = 0.5;
+    let ambient_color = Color::new(80,80,100);
+
+    let lighting = ambient_color * ambient_intensity + hull_color * diffuse_intensity;
+
+    // Combinamos las capas
+    let base_with_scratches = lighting.blend_with(&scratches_color);
+    let blended_lighting = base_with_scratches.blend_with(&engine_glow_color);
+
+    let min_intensity = 0.2;
+
+    let final_color = blended_lighting * fragment.intensity + ambient_color * min_intensity;
+    // Color final con intensidad de fragmento
+    final_color
+}
+
 fn ocean_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
     // Color base para el océano (azul alienígena)
     let ocean_color = Color::new(0, 0, 150); 
