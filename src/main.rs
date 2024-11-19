@@ -212,12 +212,12 @@ fn handle_input(
 ) {
     let smooth_factor = 0.1;
     let movement_speed = 5.0;
+    let rotation_speed = 0.05;
+    let orbit_radius = 500.0;
 
-    let forward = Vec3::new(0.0, 0.0, -1.0);
-    let left = Vec3::new(-1.0, 0.0, 0.0);
-    let right = Vec3::new(1.0, 0.0, 0.0);
-
-    let mut direction = Vec3::new(0.0, 0.0, 0.0);
+    let mut move_forward = false;
+    let mut move_left = false;
+    let mut move_right = false;
 
     // Control de la cámara
     if window.is_key_down(Key::Right) {
@@ -235,34 +235,38 @@ fn handle_input(
 
     // Movimiento hacia adelante
     if window.is_key_down(Key::W) {
-        direction += forward;
+        move_forward = true;
 
         if rotation.x > -3.1 {
-            rotation.x -= smooth_factor * 0.56; // Ajusta el valor según la transición deseada
+            rotation.x -= smooth_factor * 0.56;
         }
         if rotation.z.abs() > 0.0 {
-            rotation.z *= 1.0 - smooth_factor; // Reducir gradualmente
+            rotation.z *= 1.0 -smooth_factor;
         }
     }
 
     // Movimiento diagonal hacia adelante-izquierda (W + A)
     if window.is_key_down(Key::A) {
-        direction += left;
-        rotation.z = lerp(rotation.z,6.0*(PI/20.0),smooth_factor);
+        move_left = true;
     }
 
     // Movimiento diagonal hacia adelante-derecha (W + D)
     if window.is_key_down(Key::D) {
-        direction += right;
-        rotation.z = lerp(rotation.z,-6.0*(PI/20.0),smooth_factor);
+        move_right = true;
     }
 
-    if direction.magnitude() > 0.0 {
-        direction = direction.normalize();
-        direction *= movement_speed;
+    if move_forward {
+        let angle = rotation.y;
+        let forward_x = angle.sin() * movement_speed;
+        let forward_z = angle.cos() * movement_speed;
 
-        translation.x += direction.x;
-        translation.z += direction.z;
+        translation.x -= forward_x;
+        translation.z -= forward_z;
+
+        camera.eye.x = translation.x + orbit_radius * angle.sin();
+        camera.eye.z = translation.z + orbit_radius * angle.cos();
+        camera.center.z = translation.z;
+        camera.center.x = translation.x - 50.0;
 
         println!("Forward -> Translation: {:?}", translation);
         print!("Eye: {:?}", camera.eye);
@@ -270,10 +274,30 @@ fn handle_input(
 
     }
 
-    camera.eye.x = translation.x - 50.0;
-    camera.eye.z = translation.z + 500.0;
-    camera.center.x = translation.x;
-    camera.center.z = translation.z;
+    if move_forward && move_left {
+
+        let adjusted_angle = rotation.y + PI / 4.0;
+        let forward_x = adjusted_angle.sin() * movement_speed;
+        let forward_z = adjusted_angle.cos() * movement_speed;
+
+        translation.x -= forward_x;
+        translation.z -= forward_z;
+        rotation.z = lerp(rotation.z, 6.0 * (PI / 20.0), smooth_factor);
+        println!("Diagonal Izquierda -> Rotation Y: {}", rotation.y);
+    }
+
+    if move_forward && move_right {
+        
+        let adjusted_angle = rotation.y - PI/4.0;
+        let forward_x = adjusted_angle.sin() * movement_speed;
+        let forward_z = adjusted_angle.cos() * movement_speed;
+
+        translation.x -= forward_x;
+        translation.z -= forward_z;
+
+        rotation.z = lerp(rotation.z, -6.0 * (PI / 20.0), smooth_factor);
+        println!("Diagonal Derecha -> Rotation Y: {}", rotation.y);
+    }
 
     // Otros controles de rotación
     if window.is_key_down(Key::R) {
@@ -291,6 +315,7 @@ fn update_camera_center(angle: f32, radius: f32, camera: &mut Camera, translatio
     camera.eye.x = translation.x + radius * angle.sin() + 200.0;
     camera.eye.z = translation.z + radius * angle.cos() + 200.0;
 }
+
 
 fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t
