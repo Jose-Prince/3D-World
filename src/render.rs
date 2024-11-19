@@ -29,7 +29,7 @@ pub fn create_viewport_matrix(width: f32, height: f32) -> Mat4 {
 pub fn create_perspective_matrix(window_width: f32, window_height: f32) -> Mat4 {
     let fov = 45.0 * PI / 180.0;
     let aspect_ratio = window_width / window_height;
-    let near = 0.1;
+    let near = 1.0;
     let far = 1000.0;
 
     perspective(fov, aspect_ratio, near, far)

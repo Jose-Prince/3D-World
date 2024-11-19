@@ -135,13 +135,14 @@ fn main() {
     
     framebuffer.set_background_color(Color::new(0, 0, 0));
     
-    let mut translation = Vec3::new(50.0, 0.0, 0.0);
-    let mut rotation = Vec3::new(3.3, 0.0, 0.0);
+    let mut translation = Vec3::new(-40.0, 0.0, 0.0);
+    let mut rotation = Vec3::new(-3.1, 0.0, 0.0);
     let mut scale = 20.0f32;
-    
+    let mut translation2 = Vec3::new(50.0, 100.0, 100.0);
+
     let mut camera = Camera {
         eye: Vec3::new(0.0, 0.0, 500.0),
-        center: Vec3::new(0.0, 0.0, 0.0),
+        center: Vec3::new(translation.x - 50.0, translation.y, translation.z),
         up: Vec3::new(0.0, 1.0, 0.0), 
         has_changed: true,
     };
@@ -149,6 +150,7 @@ fn main() {
     let obj = Obj::load("src/ship.obj").expect("Failed to load obj");
     let vertex_arrays = obj.get_vertex_array(); 
     let mut time = 0;
+    let mut time2 = 0;
 
     while window.is_open() {
         if window.is_key_down(Key::Escape) {
@@ -156,8 +158,9 @@ fn main() {
         }
 
         time += 1;
+        time2 += 1;
 
-        handle_input(&window, &mut translation, &mut rotation, &mut scale);
+        handle_input(&window, &mut translation, &mut rotation, &mut scale, &mut camera);
 
         framebuffer.clear();
 
@@ -174,9 +177,23 @@ fn main() {
             time,
             noise,
         };
+        let noise2 = create_noise();
+        let model_matrix2 = create_model_matrix(translation2, scale, rotation);
+        let view_matrix2 = create_view_matrix(camera.eye, camera.center, camera.up);
+        let projection_matrix2 = create_perspective_matrix(width as f32, height as f32);
+        let viewport_matrix2 = create_viewport_matrix(width as f32, height as f32);
+        let uniforms2 = Uniforms { 
+            model_matrix:model_matrix2, 
+            view_matrix:view_matrix2,
+            projection_matrix:projection_matrix2,
+            viewport_matrix:viewport_matrix2,
+            time,
+            noise: noise2,
+        };
 
         framebuffer.set_current_color(Color::new(0,0,0));
         render(&mut framebuffer, &uniforms, &vertex_arrays);
+        //render(&mut framebuffer, &uniforms2, &vertex_arrays);
 
         window
             .update_with_buffer(&framebuffer.buffer, width, height)
@@ -186,34 +203,79 @@ fn main() {
     }
 }
 
-fn handle_input(window: &Window, translation: &mut Vec3, rotation: &mut Vec3, scale: &mut f32) {
+fn handle_input(
+    window: &Window,
+    translation: &mut Vec3,
+    rotation: &mut Vec3,
+    scale: &mut f32,
+    camera: &mut Camera,
+) {
+    let smooth_factor = 0.1;
+    let movement_speed = 5.0;
+
+    let forward = Vec3::new(0.0, 0.0, -1.0);
+    let left = Vec3::new(-1.0, 0.0, 0.0);
+    let right = Vec3::new(1.0, 0.0, 0.0);
+
+    let mut direction = Vec3::new(0.0, 0.0, 0.0);
+
+    // Control de la cámara
     if window.is_key_down(Key::Right) {
-        translation.x -= 5.0;
+        camera.orbit(-0.05, 0.0);
     }
     if window.is_key_down(Key::Left) {
-        translation.x += 5.0;
+        camera.orbit(0.05, 0.0);
     }
     if window.is_key_down(Key::Up) {
-        translation.y += 5.0;
+        camera.orbit(0.0, 0.05);
     }
     if window.is_key_down(Key::Down) {
-        translation.y -= 5.0;
+        camera.orbit(0.0, -0.05);
     }
-    if window.is_key_down(Key::S) {
-        *scale += 2.0;
-    }
-    if window.is_key_down(Key::A) {
-        *scale -= 2.0;
-    }
-    if window.is_key_down(Key::Q) {
-        rotation.x -= PI / 20.0;
-    }
+
+    // Movimiento hacia adelante
     if window.is_key_down(Key::W) {
-        rotation.x += PI / 20.0;
+        direction += forward;
+
+        if rotation.x > -3.1 {
+            rotation.x -= smooth_factor * 0.56; // Ajusta el valor según la transición deseada
+        }
+        if rotation.z.abs() > 0.0 {
+            rotation.z *= 1.0 - smooth_factor; // Reducir gradualmente
+        }
     }
-    if window.is_key_down(Key::E) {
-        rotation.y -= PI / 20.0;
+
+    // Movimiento diagonal hacia adelante-izquierda (W + A)
+    if window.is_key_down(Key::A) {
+        direction += left;
+        rotation.z = lerp(rotation.z,6.0*(PI/20.0),smooth_factor);
     }
+
+    // Movimiento diagonal hacia adelante-derecha (W + D)
+    if window.is_key_down(Key::D) {
+        direction += right;
+        rotation.z = lerp(rotation.z,-6.0*(PI/20.0),smooth_factor);
+    }
+
+    if direction.magnitude() > 0.0 {
+        direction = direction.normalize();
+        direction *= movement_speed;
+
+        translation.x += direction.x;
+        translation.z += direction.z;
+
+        println!("Forward -> Translation: {:?}", translation);
+        print!("Eye: {:?}", camera.eye);
+        //println!("Rotation -> {:?}", rotation);
+
+    }
+
+    camera.eye.x = translation.x - 50.0;
+    camera.eye.z = translation.z + 500.0;
+    camera.center.x = translation.x;
+    camera.center.z = translation.z;
+
+    // Otros controles de rotación
     if window.is_key_down(Key::R) {
         rotation.y += PI / 20.0;
     }
@@ -223,4 +285,13 @@ fn handle_input(window: &Window, translation: &mut Vec3, rotation: &mut Vec3, sc
     if window.is_key_down(Key::Y) {
         rotation.z += PI / 20.0;
     }
+}
+
+fn update_camera_center(angle: f32, radius: f32, camera: &mut Camera, translation: Vec3) {
+    camera.eye.x = translation.x + radius * angle.sin() + 200.0;
+    camera.eye.z = translation.z + radius * angle.cos() + 200.0;
+}
+
+fn lerp(a: f32, b: f32, t: f32) -> f32 {
+    a + (b - a) * t
 }
