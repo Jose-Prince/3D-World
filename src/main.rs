@@ -218,6 +218,8 @@ fn handle_input(
     let mut move_forward = false;
     let mut move_left = false;
     let mut move_right = false;
+    let mut move_up = false;
+    let mut move_down = false;
 
     // Control de la cámara
     if window.is_key_down(Key::Right) {
@@ -237,12 +239,9 @@ fn handle_input(
     if window.is_key_down(Key::W) {
         move_forward = true;
 
-        if rotation.x > -3.1 {
-            rotation.x -= smooth_factor * 0.56;
-        }
-        if rotation.z.abs() > 0.0 {
-            rotation.z *= 1.0 -smooth_factor;
-        }
+        rotation.x = lerp(rotation.x,-3.1,smooth_factor);
+        rotation.y = lerp(rotation.y, 0.0, smooth_factor);
+        rotation.z = lerp(rotation.z,0.0,smooth_factor);
     }
 
     // Movimiento diagonal hacia adelante-izquierda (W + A)
@@ -253,6 +252,14 @@ fn handle_input(
     // Movimiento diagonal hacia adelante-derecha (W + D)
     if window.is_key_down(Key::D) {
         move_right = true;
+    }
+
+    if window.is_key_down(Key::W) && window.is_key_down(Key::Down) {
+        move_up = true;
+    }
+
+    if window.is_key_down(Key::W) && window.is_key_down(Key::Up) {
+        move_down = true;
     }
 
     if move_forward {
@@ -299,15 +306,35 @@ fn handle_input(
         println!("Diagonal Derecha -> Rotation Y: {}", rotation.y);
     }
 
+    if move_up {
+        translation.y += movement_speed;
+        camera.eye.y = translation.y;
+        camera.center.y = translation.y;
+
+        rotation.x = lerp(rotation.x, -5.0 * (PI/10.0), smooth_factor);
+ 
+        println!("Moving Down -> Translation Y: {}", translation.y);       
+    }
+
+    if move_down {
+        translation.y -= movement_speed;
+        camera.eye.y = translation.y;
+        camera.center.y = translation.y;
+
+        rotation.x = lerp(rotation.x, -(PI/10.0) - 1.4 * PI, smooth_factor);
+
+        println!("Moving Down -> Translation Y: {}", translation.y);
+    }
+
     // Otros controles de rotación
     if window.is_key_down(Key::R) {
         rotation.y += PI / 20.0;
     }
     if window.is_key_down(Key::T) {
-        rotation.z -= PI / 20.0;
+        rotation.x -= PI / 20.0;
     }
     if window.is_key_down(Key::Y) {
-        rotation.z += PI / 20.0;
+        rotation.x += PI / 20.0;
     }
 }
 
