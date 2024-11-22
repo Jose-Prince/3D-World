@@ -15,7 +15,9 @@ mod shader;
 mod camera;
 mod bmp;
 mod render;
+mod skybox;
 
+use skybox::Skybox;
 use color::Color;
 use framebuffer::Framebuffer;
 use obj::Obj;
@@ -152,6 +154,8 @@ fn main() {
     let mut time = 0;
     let mut time2 = 0;
 
+    let skybox = Skybox::new(10000);
+
     while window.is_open() {
         if window.is_key_down(Key::Escape) {
             break;
@@ -163,6 +167,7 @@ fn main() {
         handle_input(&window, &mut translation, &mut rotation, &mut scale, &mut camera);
 
         framebuffer.clear();
+
 
         let noise = create_noise();
         let model_matrix = create_model_matrix(translation, scale, rotation);
@@ -177,21 +182,9 @@ fn main() {
             time,
             noise,
         };
-        let noise2 = create_noise();
-        let model_matrix2 = create_model_matrix(translation2, scale, rotation);
-        let view_matrix2 = create_view_matrix(camera.eye, camera.center, camera.up);
-        let projection_matrix2 = create_perspective_matrix(width as f32, height as f32);
-        let viewport_matrix2 = create_viewport_matrix(width as f32, height as f32);
-        let uniforms2 = Uniforms { 
-            model_matrix:model_matrix2, 
-            view_matrix:view_matrix2,
-            projection_matrix:projection_matrix2,
-            viewport_matrix:viewport_matrix2,
-            time,
-            noise: noise2,
-        };
 
-        framebuffer.set_current_color(Color::new(0,0,0));
+        skybox.render(&mut framebuffer, &uniforms, camera.eye);
+
         render(&mut framebuffer, &uniforms, &vertex_arrays);
         //render(&mut framebuffer, &uniforms2, &vertex_arrays);
 
@@ -337,12 +330,6 @@ fn handle_input(
         rotation.x += PI / 20.0;
     }
 }
-
-fn update_camera_center(angle: f32, radius: f32, camera: &mut Camera, translation: Vec3) {
-    camera.eye.x = translation.x + radius * angle.sin() + 200.0;
-    camera.eye.z = translation.z + radius * angle.cos() + 200.0;
-}
-
 
 fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t
