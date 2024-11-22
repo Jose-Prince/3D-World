@@ -233,7 +233,6 @@ fn handle_input(
         move_forward = true;
 
         rotation.x = lerp(rotation.x,-3.1,smooth_factor);
-        rotation.y = lerp(rotation.y, 0.0, smooth_factor);
         rotation.z = lerp(rotation.z,0.0,smooth_factor);
     }
 
@@ -263,7 +262,7 @@ fn handle_input(
         translation.x -= forward_x;
         translation.z -= forward_z;
 
-        camera.eye.x = translation.x + orbit_radius * angle.sin();
+        camera.eye.x = translation.x + orbit_radius * angle.sin() + (translation.x - camera.center.x);
         camera.eye.z = translation.z + orbit_radius * angle.cos();
         camera.center.z = translation.z;
         camera.center.x = translation.x - 50.0;
@@ -282,7 +281,9 @@ fn handle_input(
 
         translation.x -= forward_x;
         translation.z -= forward_z;
+
         rotation.z = lerp(rotation.z, 6.0 * (PI / 20.0), smooth_factor);
+        rotation.y = lerp(rotation.y, rotation.y + rotation_speed, smooth_factor);
         println!("Diagonal Izquierda -> Rotation Y: {}", rotation.y);
     }
 
@@ -292,10 +293,11 @@ fn handle_input(
         let forward_x = adjusted_angle.sin() * movement_speed;
         let forward_z = adjusted_angle.cos() * movement_speed;
 
-        translation.x -= forward_x;
+        translation.x -= forward_x + 47.0;
         translation.z -= forward_z;
 
         rotation.z = lerp(rotation.z, -6.0 * (PI / 20.0), smooth_factor);
+        rotation.y = lerp(rotation.y, rotation.y - rotation_speed, smooth_factor);
         println!("Diagonal Derecha -> Rotation Y: {}", rotation.y);
     }
 
