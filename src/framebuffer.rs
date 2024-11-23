@@ -71,4 +71,32 @@ impl Framebuffer {
             None
         }
     }
+
+    pub fn fill_polygon(&mut self, vertices: &Vec<[isize; 2]>, fill_color: Color) {
+        let min_y = vertices.iter().map(|v| v[1]).min().unwrap_or(0);
+        let max_y = vertices.iter().map(|v| v[1]).max().unwrap_or(0);
+
+        for y in min_y..=max_y {
+            let mut nodes = vec![];
+            let mut j = vertices.len() - 1;
+            for i in 0..vertices.len() {
+                let vi = vertices[i];
+                let vj = vertices[j];
+                if vi[1] < y && vj[1] >= y || vj[1] < y && vi[1] >= y {
+                    let intersect_x = vi[0] + (y - vi[1]) * (vj[0] - vi[0]) / (vj[1] - vi[1]);
+                    nodes.push(intersect_x);
+                }
+                j = i;
+            }
+            nodes.sort();
+            for n in (0..nodes.len()).step_by(2) {
+                if n + 1 < nodes.len() {
+                    for x in nodes[n]..=nodes[n + 1] {
+                        self.set_current_color(fill_color);
+                        self.point(x, y, 0.0);
+                    }
+                }
+            }
+        }
+    }
 }

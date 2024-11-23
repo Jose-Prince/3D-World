@@ -1,6 +1,6 @@
 //main.rs
 
-use nalgebra_glm::Vec3;
+use nalgebra_glm::{Vec3, Vec2};
 use minifb::{Key, Window, WindowOptions};
 use std::time::Duration;
 use std::f32::consts::PI;
@@ -16,7 +16,11 @@ mod camera;
 mod bmp;
 mod render;
 mod skybox;
+mod minimap;
+mod polygon;
+mod line;
 
+use minimap::Minimap;
 use skybox::Skybox;
 use color::Color;
 use framebuffer::Framebuffer;
@@ -156,6 +160,8 @@ fn main() {
 
     let skybox = Skybox::new(10000);
 
+    let mut minimap = Minimap::new((width as isize - 100) / 4, height as isize / 4, Vec2::new((width - 120) as f32, 120.0));
+
     while window.is_open() {
         if window.is_key_down(Key::Escape) {
             break;
@@ -187,6 +193,8 @@ fn main() {
 
         render(&mut framebuffer, &uniforms, &vertex_arrays);
         //render(&mut framebuffer, &uniforms2, &vertex_arrays);
+        //
+        minimap.render(&mut framebuffer);
 
         window
             .update_with_buffer(&framebuffer.buffer, width, height)
