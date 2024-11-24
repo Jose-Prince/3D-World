@@ -61,7 +61,7 @@ pub fn render(&self, framebuffer: &mut Framebuffer, uniforms: &Uniforms, camera_
         let screen_pos = uniforms.view_matrix * Vec4::new(ndc.x,ndc.y,ndc.z,1.0);
 
         // Convertir las coordenadas NDC a coordenadas de pantalla.
-        let screen_x = screen_pos.x as i32 + ((ndc.x + 1.0) * 0.5 * framebuffer.width as f32) as i32;
+        let screen_x = -screen_pos.x as i32 + ((ndc.x + 1.0) * 0.5 * framebuffer.width as f32) as i32;
         let screen_y = screen_pos.y as i32 + ((1.0 - ndc.y) * 0.5 * framebuffer.height as f32) as i32;
 
         // Verificar si la estrella está dentro de la pantalla.

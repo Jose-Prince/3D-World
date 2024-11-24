@@ -136,15 +136,15 @@ fn main() {
     )
     .unwrap();
 
-    
     window.update();
     
     framebuffer.set_background_color(Color::new(0, 0, 0));
     
     let mut translation = Vec3::new(-40.0, 0.0, 0.0);
-    let mut rotation = Vec3::new(-3.1, 0.0, 0.0);
+    let mut rotation_y = 0.0f32; // Cambiado a un único valor para la rotación Y
+    let mut rotation_x = -3.1;
+    let mut rotation_z = 0.0;
     let mut scale = 20.0f32;
-    let mut translation2 = Vec3::new(50.0, 100.0, 100.0);
 
     let mut camera = Camera {
         eye: Vec3::new(0.0, 0.0, 500.0),
@@ -156,11 +156,15 @@ fn main() {
     let obj = Obj::load("src/ship.obj").expect("Failed to load obj");
     let vertex_arrays = obj.get_vertex_array(); 
     let mut time = 0;
-    let mut time2 = 0;
 
     let skybox = Skybox::new(10000);
 
-    let mut minimap = Minimap::new((width as isize - 100) / 4, height as isize / 4, Vec2::new((width - 120) as f32, 120.0));
+    let mut minimap = Minimap::new(
+        (width as isize - 100) / 4, 
+        height as isize / 4, 
+        Vec2::new((width - 120) as f32, 120.0), 
+        Vec2::new(translation.x, translation.z),
+    );
 
     while window.is_open() {
         if window.is_key_down(Key::Escape) {
@@ -168,15 +172,23 @@ fn main() {
         }
 
         time += 1;
-        time2 += 1;
 
-        handle_input(&window, &mut translation, &mut rotation, &mut scale, &mut camera);
+        // Manejo de entrada actualizado con desacoplamiento
+        handle_input(
+            &window, 
+            &mut translation, 
+            &mut rotation_y, 
+            &mut rotation_x,
+            &mut rotation_z,
+            &mut scale, 
+            &mut camera, 
+            &mut minimap,
+        );
 
         framebuffer.clear();
 
-
         let noise = create_noise();
-        let model_matrix = create_model_matrix(translation, scale, rotation);
+        let model_matrix = create_model_matrix(translation, scale, Vec3::new(rotation_x, rotation_y, rotation_z));
         let view_matrix = create_view_matrix(camera.eye, camera.center, camera.up);
         let projection_matrix = create_perspective_matrix(width as f32, height as f32);
         let viewport_matrix = create_viewport_matrix(width as f32, height as f32);
@@ -192,8 +204,6 @@ fn main() {
         skybox.render(&mut framebuffer, &uniforms, camera.eye);
 
         render(&mut framebuffer, &uniforms, &vertex_arrays);
-        //render(&mut framebuffer, &uniforms2, &vertex_arrays);
-        //
         minimap.render(&mut framebuffer);
 
         window
@@ -207,140 +217,81 @@ fn main() {
 fn handle_input(
     window: &Window,
     translation: &mut Vec3,
-    rotation: &mut Vec3,
+    rotation_y: &mut f32, // Solo el ángulo Y es necesario.
+    rotation_x: &mut f32,
+    rotation_z: &mut f32,
     scale: &mut f32,
     camera: &mut Camera,
+    minimap: &mut Minimap,
 ) {
     let smooth_factor = 0.1;
     let movement_speed = 5.0;
     let rotation_speed = 0.05;
     let orbit_radius = 500.0;
 
-    let mut move_forward = false;
-    let mut move_left = false;
-    let mut move_right = false;
-    let mut move_up = false;
-    let mut move_down = false;
+    let mut move_direction = Vec3::new(0.0, 0.0, 0.0);
+    let mut orientation = Vec3::new(rotation_y.sin(), 0.0, rotation_y.cos());
 
-    // Control de la cámara
+    // Rotación de la cámara/orientación
     if window.is_key_down(Key::Right) {
         camera.orbit(-0.05, 0.0);
     }
     if window.is_key_down(Key::Left) {
         camera.orbit(0.05, 0.0);
     }
-    if window.is_key_down(Key::Up) {
-        camera.orbit(0.0, 0.05);
-    }
-    if window.is_key_down(Key::Down) {
-        camera.orbit(0.0, -0.05);
-    }
 
-    // Movimiento hacia adelante
+    // Movimiento en la dirección de la orientación
     if window.is_key_down(Key::W) {
-        move_forward = true;
+        move_direction += orientation * movement_speed;
 
-        rotation.x = lerp(rotation.x,-3.1,smooth_factor);
-        rotation.z = lerp(rotation.z,0.0,smooth_factor);
+        camera.eye = *translation + orbit_radius * orientation;
+        camera.center = *translation;
+
+        *rotation_x = lerp(*rotation_x, -3.1, smooth_factor);
     }
 
-    // Movimiento diagonal hacia adelante-izquierda (W + A)
+    // Movimiento lateral (izquierda/derecha, ortogonal a la orientación)
+    let right = Vec3::new(-orientation.z, 0.0, orientation.x); // Vector perpendicular a la orientación.
     if window.is_key_down(Key::A) {
-        move_left = true;
+        move_direction += right * (movement_speed);
+        *rotation_y += rotation_speed;
+        orientation.x = rotation_y.sin();
+        orientation.z = rotation_y.cos();
     }
-
-    // Movimiento diagonal hacia adelante-derecha (W + D)
     if window.is_key_down(Key::D) {
-        move_right = true;
+        move_direction -= right * movement_speed;
+        *rotation_y -= rotation_speed;
+        orientation.x = rotation_y.sin();
+        orientation.z = rotation_y.cos();
     }
 
-    if window.is_key_down(Key::W) && window.is_key_down(Key::Down) {
-        move_up = true;
+    // Movimiento vertical
+    if window.is_key_down(Key::Up) {
+        camera.orbit(0.0,0.05);
+    } 
+
+    if window.is_key_down(Key::Down) {
+        camera.orbit(0.0,-0.05);
     }
 
-    if window.is_key_down(Key::W) && window.is_key_down(Key::Up) {
-        move_down = true;
+    if window.is_key_down(Key::Up) && window.is_key_down(Key::W) {
+        move_direction.y += movement_speed;
+        *rotation_x = lerp(*rotation_x, -(PI/10.0) - PI * 1.4, smooth_factor);
     }
 
-    if move_forward {
-        let angle = rotation.y;
-        let forward_x = angle.sin() * movement_speed;
-        let forward_z = angle.cos() * movement_speed;
-
-        translation.x -= forward_x;
-        translation.z -= forward_z;
-
-        camera.eye.x = translation.x + orbit_radius * angle.sin() + (translation.x - camera.center.x);
-        camera.eye.z = translation.z + orbit_radius * angle.cos();
-        camera.center.z = translation.z;
-        camera.center.x = translation.x - 50.0;
-
-        println!("Forward -> Translation: {:?}", translation);
-        print!("Eye: {:?}", camera.eye);
-        //println!("Rotation -> {:?}", rotation);
-
+    if window.is_key_down(Key::Down) && window.is_key_down(Key::W) {
+        move_direction.y -= movement_speed;
+        *rotation_x = lerp(*rotation_x, -5.0 * (PI / 10.0), smooth_factor);
     }
 
-    if move_forward && move_left {
+    // Aplicar movimiento y actualizar posición de la cámara
+    *translation += move_direction;
 
-        let adjusted_angle = rotation.y + PI / 4.0;
-        let forward_x = adjusted_angle.sin() * movement_speed;
-        let forward_z = adjusted_angle.cos() * movement_speed;
-
-        translation.x -= forward_x;
-        translation.z -= forward_z;
-
-        rotation.z = lerp(rotation.z, 6.0 * (PI / 20.0), smooth_factor);
-        rotation.y = lerp(rotation.y, rotation.y + rotation_speed, smooth_factor);
-        println!("Diagonal Izquierda -> Rotation Y: {}", rotation.y);
-    }
-
-    if move_forward && move_right {
-        
-        let adjusted_angle = rotation.y - PI/4.0;
-        let forward_x = adjusted_angle.sin() * movement_speed;
-        let forward_z = adjusted_angle.cos() * movement_speed;
-
-        translation.x -= forward_x + 47.0;
-        translation.z -= forward_z;
-
-        rotation.z = lerp(rotation.z, -6.0 * (PI / 20.0), smooth_factor);
-        rotation.y = lerp(rotation.y, rotation.y - rotation_speed, smooth_factor);
-        println!("Diagonal Derecha -> Rotation Y: {}", rotation.y);
-    }
-
-    if move_up {
-        translation.y += movement_speed;
-        camera.eye.y = translation.y;
-        camera.center.y = translation.y;
-
-        rotation.x = lerp(rotation.x, -5.0 * (PI/10.0), smooth_factor);
- 
-        println!("Moving Down -> Translation Y: {}", translation.y);       
-    }
-
-    if move_down {
-        translation.y -= movement_speed;
-        camera.eye.y = translation.y;
-        camera.center.y = translation.y;
-
-        rotation.x = lerp(rotation.x, -(PI/10.0) - 1.4 * PI, smooth_factor);
-
-        println!("Moving Down -> Translation Y: {}", translation.y);
-    }
-
-    // Otros controles de rotación
-    if window.is_key_down(Key::R) {
-        rotation.y += PI / 20.0;
-    }
-    if window.is_key_down(Key::T) {
-        rotation.x -= PI / 20.0;
-    }
-    if window.is_key_down(Key::Y) {
-        rotation.x += PI / 20.0;
-    }
+    // Minimapa actualizado
+    minimap.update_ship_pos(translation.x, translation.z);
 }
 
 fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a + (b - a) * t
 }
+
