@@ -61,8 +61,8 @@ impl Minimap {
         framebuffer.set_current_color(Color::new(255,0,0));
 
         //Transform ship translation to minimap coords
-        let mut coord_x = self.position.x as isize + (self.ship_pos.x / 100.0) as isize;
-        let mut coord_y = self.position.y as isize + (self.ship_pos.y / 100.0) as isize;
+        let mut coord_x = self.position.x as isize + (self.ship_pos.x / 500.0) as isize;
+        let mut coord_y = self.position.y as isize + (self.ship_pos.y / 500.0) as isize;
 
         framebuffer.point(coord_x, coord_y, 0.0);
 
@@ -81,8 +81,8 @@ impl Minimap {
 
         //Planet 1 coords
         framebuffer.set_current_color(Color::new(79,22,19));
-        coord_x = self.position.x as isize + (self.planet1_pos.x / 100.0) as isize;
-        coord_y = self.position.y as isize + (self.planet1_pos.y / 100.0) as isize;
+        coord_x = self.position.x as isize + (self.planet1_pos.x / 500.0) as isize;
+        coord_y = self.position.y as isize + (self.planet1_pos.y / 500.0) as isize;
 
         framebuffer.point((coord_x - 1) as isize, (coord_y - 1) as isize, 0.0);
         framebuffer.point((coord_x - 1) as isize as isize, coord_y as isize, 0.0);
@@ -96,8 +96,8 @@ impl Minimap {
         
         //Planet 2 coords
         framebuffer.set_current_color(Color::new(109,218,222));
-        coord_x = self.position.x as isize + (self.planet2_pos.x / 100.0) as isize;
-        coord_y = self.position.y as isize + (self.planet2_pos.y / 100.0) as isize;
+        coord_x = self.position.x as isize + (self.planet2_pos.x / 500.0) as isize;
+        coord_y = self.position.y as isize + (self.planet2_pos.y / 500.0) as isize;
 
         framebuffer.point((coord_x - 1) as isize, (coord_y - 1) as isize, 0.0);
         framebuffer.point((coord_x - 1) as isize as isize, coord_y as isize, 0.0);
@@ -112,8 +112,8 @@ impl Minimap {
         
         //Planet 3 coords
         framebuffer.set_current_color(Color::new(87,179,82));
-        coord_x = self.position.x as isize + (self.planet3_pos.x / 100.0) as isize;
-        coord_y = self.position.y as isize + (self.planet3_pos.y / 100.0) as isize;
+        coord_x = self.position.x as isize + (self.planet3_pos.x / 500.0) as isize;
+        coord_y = self.position.y as isize + (self.planet3_pos.y / 500.0) as isize;
 
         framebuffer.point((coord_x - 1) as isize, (coord_y - 1) as isize, 0.0);
         framebuffer.point((coord_x - 1) as isize as isize, coord_y as isize, 0.0);
@@ -127,8 +127,8 @@ impl Minimap {
         
         //Planet 4 coords
         framebuffer.set_current_color(Color::new(125,19,14));
-        coord_x = self.position.x as isize + (self.planet4_pos.x / 100.0) as isize;
-        coord_y = self.position.y as isize + (self.planet4_pos.y / 100.0) as isize;
+        coord_x = self.position.x as isize + (self.planet4_pos.x / 500.0) as isize;
+        coord_y = self.position.y as isize + (self.planet4_pos.y / 500.0) as isize;
 
         framebuffer.point((coord_x - 1) as isize, (coord_y - 1) as isize, 0.0);
         framebuffer.point((coord_x - 1) as isize as isize, coord_y as isize, 0.0);
@@ -142,8 +142,8 @@ impl Minimap {
         
         //Planet 5 coords
         framebuffer.set_current_color(Color::new(2,5,64));
-        coord_x = self.position.x as isize + (self.planet5_pos.x / 100.0) as isize;
-        coord_y = self.position.y as isize + (self.planet5_pos.y / 100.0) as isize;
+        coord_x = self.position.x as isize + (self.planet5_pos.x / 500.0) as isize;
+        coord_y = self.position.y as isize + (self.planet5_pos.y / 500.0) as isize;
 
         framebuffer.point((coord_x - 1) as isize, (coord_y - 1) as isize, 0.0);
         framebuffer.point((coord_x - 1) as isize as isize, coord_y as isize, 0.0);

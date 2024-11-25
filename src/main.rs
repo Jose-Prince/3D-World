@@ -127,8 +127,8 @@ fn main() {
     let mut scale = 20.0f32;
 
     let mut camera = Camera {
-        eye: Vec3::new(0.0, 0.0, translation.z + 500.0),
-        center: Vec3::new(translation.x - 50.0, translation.y, translation.z),
+        eye: Vec3::new(0.0, 0.0, 89000.0),
+        center: Vec3::new(0.0,0.0,0.0),
         up: Vec3::new(0.0, 1.0, 0.0), 
         has_changed: true,
     };
@@ -140,16 +140,17 @@ fn main() {
     let vertex_arrays_sphere = sphere.get_vertex_array();
 
     let mut time = 0;
+    let mut is_alternate_render = false;
 
     let skybox = Skybox::new(10000);
 
     let mut celestial_bodies = vec![
         (vertex_arrays_sphere.clone(), Vec3::new(0.0, 0.0, 0.0), 3000.0, 4, 0.0), //star
-        (vertex_arrays_sphere.clone(), Vec3::new(2000.0 / 2.0f32.sqrt(), 0.0, 2000.0 / 2.0f32.sqrt()), 3000.0, 2, 0.0),
-        (vertex_arrays_sphere.clone(), Vec3::new(4000.0 / 2.0f32.sqrt(), 0.0, -4000.0 / 2.0f32.sqrt()), 2500.0, 3, 1.57),
-        (vertex_arrays_sphere.clone(), Vec3::new(-6000.0 / 2.0f32.sqrt(), 0.0, -6000.0 / 2.0f32.sqrt()), 1800.0, 1, 3.14),
-        (vertex_arrays_sphere.clone(), Vec3::new(-8000.0 / 2.0f32.sqrt(), 0.0, 8000.0 / 2.0f32.sqrt()), 1800.0, 5, 4.71),
-        (vertex_arrays_sphere.clone(), Vec3::new(-8000.0, 0.0, 0.0), 1800.0, 6, 6.28),
+        (vertex_arrays_sphere.clone(), Vec3::new(2.0 * 4000.0 / 2.0f32.sqrt(), 0.0, 2.0 * 4000.0 / 2.0f32.sqrt()), 3000.0, 2, 0.0),
+        (vertex_arrays_sphere.clone(), Vec3::new(2.0 *8000.0 / 2.0f32.sqrt(), 0.0,2.0 * -8000.0 / 2.0f32.sqrt()), 2500.0, 3, 1.57),
+        (vertex_arrays_sphere.clone(), Vec3::new(2.0 * -12000.0 / 2.0f32.sqrt(), 0.0,2.0 * -12000.0 / 2.0f32.sqrt()), 1800.0, 1, 3.14),
+        (vertex_arrays_sphere.clone(), Vec3::new(2.0 * -16000.0 / 2.0f32.sqrt(), 0.0,2.0 * 16000.0 / 2.0f32.sqrt()), 1800.0, 5, 4.71),
+        (vertex_arrays_sphere.clone(), Vec3::new(2.0 * -16000.0, 0.0, 0.0), 1800.0, 6, 6.28),
     ];
 
     let mut minimap = Minimap::new(
@@ -169,19 +170,12 @@ fn main() {
             break;
         }
 
-        time += 1;
+        if window.is_key_down(Key::M) {
+            is_alternate_render = !is_alternate_render;
+            std::thread::sleep(Duration::from_millis(200));
+        } 
 
-        // Manejo de entrada actualizado con desacoplamiento
-        handle_input(
-            &window, 
-            &mut translation, 
-            &mut rotation_y, 
-            &mut rotation_x,
-            &mut rotation_z,
-            &mut scale, 
-            &mut camera, 
-            &mut minimap,
-        );
+        time += 1;
 
         framebuffer.clear();
 
@@ -201,16 +195,15 @@ fn main() {
 
         skybox.render(&mut framebuffer, &uniforms_base, camera.eye);
 
-        render(&mut framebuffer, &uniforms_base, &vertex_arrays, 0);
         
         for (vertex_array, translation, scale, number, _) in &celestial_bodies {
-             if is_in_center(*translation, &mut camera) {
+             if is_in_center(*translation, &mut camera, true) {
 
                 let distance = (camera.eye - *translation).magnitude();
 
                 let new_scale = calculate_scale_based_on_distance(distance, *scale);
                 let noise = create_noise(*number);
-                let model_matrix = create_model_matrix(*translation, new_scale, Vec3::zeros());
+                let model_matrix = create_model_matrix(*translation, *scale, Vec3::zeros());
                 let uniforms = Uniforms {
                     model_matrix,
                     noise,
@@ -244,7 +237,27 @@ fn main() {
             }
         }
 
-        minimap.render(&mut framebuffer);
+         
+        if !is_alternate_render {
+
+            // Manejo de entrada actualizado con desacoplamiento
+            handle_input(
+                &window, 
+                &mut translation, 
+                &mut rotation_y, 
+                &mut rotation_x,
+                &mut rotation_z,
+                &mut scale, 
+                &mut camera, 
+                &mut minimap,
+            );
+
+            render(&mut framebuffer, &uniforms_base, &vertex_arrays, 0);
+
+            minimap.render(&mut framebuffer);
+        } else {
+            camera.eye = Vec3::new(-0.00038838302, 88555.33, 8885.168);
+        }
 
         window
             .update_with_buffer(&framebuffer.buffer, width, height)
@@ -263,18 +276,39 @@ fn calculate_scale_based_on_distance(distance: f32, max_scale: f32) -> f32 {
     min_scale + (max_scale - min_scale) * (1.0 - scale_factor) // A mayor distancia, menor escala
 }
 
-fn is_in_center(translation: Vec3, camera: &mut Camera) -> bool {
-    let camera_xy = Vec2::new(camera.eye.x, camera.eye.y);
-    let translation_xy = Vec2::new(translation.x, translation.y);
-    let range = 3000.0; // Rango permitido en unidades.
+fn is_in_center(translation: Vec3, camera: &mut Camera, is_up: bool) -> bool {
 
-    // Verificar si está dentro del rango en ambas dimensiones.
-    let in_range = (translation_xy.x >= camera_xy.x - range && translation_xy.x <= camera_xy.x + range) &&
-                   (translation_xy.y >= camera_xy.y - range && translation_xy.y <= camera_xy.y + range);
+    if is_up {
+        let camera_xz = Vec2::new(camera.eye.x, camera.eye.z);
+        let translation_xz = Vec2::new(translation.x, translation.z);
+        let range = 10000000.0; // Rango permitido en unidades.
 
-    if !in_range {
-        return false;
+        // Verificar si está dentro del rango en ambas dimensiones.
+        let in_range = (translation_xz.x >= camera_xz.x - range && translation_xz.x <= camera_xz.x + range) &&
+        (translation_xz.y >= camera_xz.y - range && translation_xz.y <= camera_xz.y + range);
+
+        println!("Rendering object at position: {:?}", translation);
+        println!("Camera position: {:?}, direction: {:?}", camera.eye, camera.center);
+
+
+        if !in_range {
+            return false;
+        }
+    
+    } else {
+        let camera_xy = Vec2::new(camera.eye.x, camera.eye.y);
+        let translation_xy = Vec2::new(translation.x, translation.y);
+        let range = 3000.0; // Rango permitido en unidades.
+
+        // Verificar si está dentro del rango en ambas dimensiones.
+        let in_range = (translation_xy.x >= camera_xy.x - range && translation_xy.x <= camera_xy.x + range) &&
+        (translation_xy.y >= camera_xy.y - range && translation_xy.y <= camera_xy.y + range);
+
+        if !in_range {
+            return false;
+        }
     }
+    
 
     // Vector dirección desde la cámara hacia el objeto.
     let direction_to_object = translation - camera.eye;

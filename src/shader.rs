@@ -4,10 +4,6 @@ use crate::vertex::Vertex;
 use crate::render::Uniforms;
 use crate::color::Color;
 use crate::fragment::Fragment;
-use std::f32::consts::PI;
-use rand::Rng;
-use rand::SeedableRng;
-use rand::rngs::StdRng;
 
 pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
     //Transform position
@@ -142,7 +138,7 @@ fn ocean_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
     let ocean_color = Color::new(0, 0, 150); 
     let noise_value = uniforms.noise.get_noise_2d(fragment.position.x * 5.0, fragment.position.y * 5.0);
     let intensity = (0.7 + 0.3 * noise_value) as f32; // Intensidad variada por el ruido
-    ocean_color * intensity * fragment.intensity
+    ocean_color * intensity 
 }
 
 fn continents_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
@@ -154,7 +150,7 @@ fn continents_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
     let noise_value = uniforms.noise.get_noise_2d(fragment.position.x * 2.0, fragment.position.y * 2.0);
     let terrain_color = base_color.lerp(&rocky_color, (noise_value * 0.5 + 0.5) as f32);
 
-    terrain_color * fragment.intensity
+    terrain_color 
 }
 
 fn atmosphere_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
@@ -162,7 +158,7 @@ fn atmosphere_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
     let atmosphere_color = Color::new(50, 100, 200); // Un azul brillante
     let noise_value = uniforms.noise.get_noise_2d(fragment.position.x * 0.5, fragment.position.y * 0.5);
     let intensity = (0.5 + 0.5 * noise_value) as f32; // Atmósfera con variaciones sutiles
-    atmosphere_color * intensity * fragment.intensity
+    atmosphere_color * intensity 
 }
 
 fn clouds_layer(fragment: &Fragment, uniforms: &Uniforms) -> Color {
@@ -212,14 +208,14 @@ fn ocean_layer2(fragment: &Fragment, uniforms: &Uniforms) -> Color {
     let ocean_color = Color::new(0, 105, 148);
     let noise_value = uniforms.noise.get_noise_2d(fragment.position.x * 10.0, fragment.position.y * 10.0);
     let intensity = (0.8 + 0.2 * noise_value) as f32;
-    ocean_color * intensity * fragment.intensity
+    ocean_color * intensity 
 }
 
 fn continents_layer2(fragment: &Fragment, uniforms: &Uniforms) -> Color {
     let land_color = Color::new(34,139,34);
     let desert_color = Color::new(194, 178, 128);
     let noise_value = uniforms.noise.get_noise_2d(fragment.position.x * 5.0, fragment.position.y * 5.0);
-    land_color.lerp(&desert_color, (noise_value * 0.5 + 0.5) as f32) * fragment.intensity
+    land_color.lerp(&desert_color, (noise_value * 0.5 + 0.5) as f32) 
 }
 
 fn clouds_layer2(fragment: &Fragment, uniforms: &Uniforms) -> Color {
@@ -299,7 +295,7 @@ pub fn combined_ice_cloud_shader(fragment: &Fragment, uniforms: &Uniforms) -> Co
     if !cloud_color.is_black() {
         cloud_color * fragment.intensity + ice_color * 0.7
     } else {
-        ice_color * fragment.intensity
+        ice_color 
     }
 }
 
@@ -400,5 +396,5 @@ fn lava_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
   // Use lerp for color blending based on noise value
   let color = dark_color.lerp(&bright_color, noise_value);
 
-  color * fragment.intensity
+  color 
 }
