@@ -146,10 +146,10 @@ fn main() {
     let mut celestial_bodies = vec![
         (vertex_arrays_sphere.clone(), Vec3::new(0.0, 0.0, 0.0), 3000.0, 4, 0.0), //star
         (vertex_arrays_sphere.clone(), Vec3::new(2000.0 / 2.0f32.sqrt(), 0.0, 2000.0 / 2.0f32.sqrt()), 3000.0, 2, 0.0),
-        (vertex_arrays_sphere.clone(), Vec3::new(4000.0 / 2.0f32.sqrt(), 0.0, -4000.0 / 2.0f32.sqrt()), 2500.0, 3, 0.0),
-        (vertex_arrays_sphere.clone(), Vec3::new(-6000.0 / 2.0f32.sqrt(), 0.0, -6000.0 / 2.0f32.sqrt()), 1800.0, 1, 0.0),
-        (vertex_arrays_sphere.clone(), Vec3::new(-8000.0 / 2.0f32.sqrt(), 0.0, 8000.0 / 2.0f32.sqrt()), 1800.0, 5, 0.0),
-        (vertex_arrays_sphere.clone(), Vec3::new(-8000.0, 0.0, 0.0), 1800.0, 6, 0.0),
+        (vertex_arrays_sphere.clone(), Vec3::new(4000.0 / 2.0f32.sqrt(), 0.0, -4000.0 / 2.0f32.sqrt()), 2500.0, 3, 1.57),
+        (vertex_arrays_sphere.clone(), Vec3::new(-6000.0 / 2.0f32.sqrt(), 0.0, -6000.0 / 2.0f32.sqrt()), 1800.0, 1, 3.14),
+        (vertex_arrays_sphere.clone(), Vec3::new(-8000.0 / 2.0f32.sqrt(), 0.0, 8000.0 / 2.0f32.sqrt()), 1800.0, 5, 4.71),
+        (vertex_arrays_sphere.clone(), Vec3::new(-8000.0, 0.0, 0.0), 1800.0, 6, 6.28),
     ];
 
     let mut minimap = Minimap::new(
@@ -221,13 +221,27 @@ fn main() {
         }
 
         for body in &mut celestial_bodies {
-            let (_, position, _, _, angle) = body;
+            let (_, position, _, number, angle) = body;
 
             *angle += 0.001 as f32;
 
             let radius = position.magnitude();
             position.x = radius * angle.cos();
             position.z = radius * angle.sin();
+
+            if *number == 1 {
+                minimap.update_p1_pos(position.x, position.z);
+            } else if *number == 2 {
+                minimap.update_p2_pos(position.x, position.z);
+            } else if *number == 3 {
+                minimap.update_p3_pos(position.x, position.z);
+            } else if *number == 4 {
+
+            } else if *number == 5 {
+                minimap.update_p4_pos(position.x, position.z);
+            } else {
+                minimap.update_p5_pos(position.x, position.z);
+            }
         }
 
         minimap.render(&mut framebuffer);
@@ -239,6 +253,7 @@ fn main() {
         std::thread::sleep(frame_delay);
     }
 }
+
 fn calculate_scale_based_on_distance(distance: f32, max_scale: f32) -> f32 {
     // Definir un mínimo y un máximo de escala
     let min_scale = 5.0;
