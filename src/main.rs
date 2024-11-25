@@ -29,15 +29,22 @@ use camera::Camera;
 use crate::render::{Uniforms, render, create_model_matrix, create_view_matrix, create_perspective_matrix, create_viewport_matrix};
 use fastnoise_lite::{FastNoiseLite, NoiseType, FractalType};
 
-fn create_noise() -> FastNoiseLite {
-    create_earth_noise()
-    //create_magma_noise()
-    //create_ice_noise()
-    //create_cloud_noise()
-    //create_lava_noise()
-    //create_ground_noise()
-    //create_cell_noise()
-    //create_star_noise()
+fn create_noise(number: u8) -> FastNoiseLite {
+    if number == 0 {
+        create_earth_noise()
+    } else if number == 1 {
+        create_earth_noise()
+    } else if number == 2 {
+        create_magma_noise()
+    } else if number == 3 {
+        create_ice_noise()
+    } else if number == 4 {
+        create_star_noise()
+    } else if number == 5 {
+        create_ground_noise()
+    } else {
+        create_earth_noise()
+    }
 }
 
 fn create_earth_noise() -> FastNoiseLite {
@@ -81,19 +88,6 @@ fn create_star_noise() -> FastNoiseLite {
     noise
 }
 
-fn create_cloud_noise() -> FastNoiseLite {
-    let mut noise = FastNoiseLite::with_seed(1337);
-    noise.set_noise_type(Some(NoiseType::Cellular));
-    noise
-}
-
-fn create_cell_noise() -> FastNoiseLite {
-    let mut noise = FastNoiseLite::with_seed(1337);
-    noise.set_noise_type(Some(NoiseType::Cellular));
-    noise.set_frequency(Some(0.1));
-    noise
-}
-
 fn create_ground_noise() -> FastNoiseLite {
     let mut noise = FastNoiseLite::with_seed(1337);
     
@@ -105,20 +99,6 @@ fn create_ground_noise() -> FastNoiseLite {
     noise.set_fractal_gain(Some(0.5));               // Gain controls amplitude scaling
     noise.set_frequency(Some(0.05));                 // Lower frequency for larger features
 
-    noise
-}
-
-fn create_lava_noise() -> FastNoiseLite {
-    let mut noise = FastNoiseLite::with_seed(42);
-    
-    // Use FBm for multi-layered noise, giving a "turbulent" feel
-    noise.set_noise_type(Some(NoiseType::Perlin));  // Perlin noise for smooth, natural texture
-    noise.set_fractal_type(Some(FractalType::FBm)); // FBm for layered detail
-    noise.set_fractal_octaves(Some(6));             // High octaves for rich detail
-    noise.set_fractal_lacunarity(Some(2.0));        // Higher lacunarity = more contrast between layers
-    noise.set_fractal_gain(Some(0.5));              // Higher gain = more influence of smaller details
-    noise.set_frequency(Some(0.002));                // Low frequency = large features
-    
     noise
 }
 
@@ -140,14 +120,14 @@ fn main() {
     
     framebuffer.set_background_color(Color::new(0, 0, 0));
     
-    let mut translation = Vec3::new(-40.0, 0.0, 0.0);
-    let mut rotation_y = 0.0f32; // Cambiado a un único valor para la rotación Y
+    let mut translation = Vec3::new(-7000.0, 0.0, 0.0);
+    let mut rotation_y = 0.0; // Cambiado a un único valor para la rotación Y
     let mut rotation_x = -3.1;
     let mut rotation_z = 0.0;
     let mut scale = 20.0f32;
 
     let mut camera = Camera {
-        eye: Vec3::new(0.0, 0.0, 500.0),
+        eye: Vec3::new(0.0, 0.0, translation.z + 500.0),
         center: Vec3::new(translation.x - 50.0, translation.y, translation.z),
         up: Vec3::new(0.0, 1.0, 0.0), 
         has_changed: true,
@@ -155,15 +135,33 @@ fn main() {
 
     let obj = Obj::load("src/ship.obj").expect("Failed to load obj");
     let vertex_arrays = obj.get_vertex_array(); 
+    
+    let sphere = Obj::load("src/sphere.obj").expect("Failed to load obj");
+    let vertex_arrays_sphere = sphere.get_vertex_array();
+
     let mut time = 0;
 
     let skybox = Skybox::new(10000);
+
+    let mut celestial_bodies = vec![
+        (vertex_arrays_sphere.clone(), Vec3::new(0.0, 0.0, 0.0), 3000.0, 4), //star
+        (vertex_arrays_sphere.clone(), Vec3::new(2000.0 / 2.0f32.sqrt(), 0.0, 2000.0 / 2.0f32.sqrt()), 3000.0, 2),
+        (vertex_arrays_sphere.clone(), Vec3::new(4000.0 / 2.0f32.sqrt(), 0.0, -4000.0 / 2.0f32.sqrt()), 2500.0, 3),
+        (vertex_arrays_sphere.clone(), Vec3::new(-6000.0 / 2.0f32.sqrt(), 0.0, -6000.0 / 2.0f32.sqrt()), 1800.0, 1),
+        (vertex_arrays_sphere.clone(), Vec3::new(-8000.0 / 2.0f32.sqrt(), 0.0, 8000.0 / 2.0f32.sqrt()), 1800.0, 5),
+        (vertex_arrays_sphere.clone(), Vec3::new(-8000.0, 0.0, 0.0), 1800.0, 6),
+    ];
 
     let mut minimap = Minimap::new(
         (width as isize - 100) / 4, 
         height as isize / 4, 
         Vec2::new((width - 120) as f32, 120.0), 
         Vec2::new(translation.x, translation.z),
+        Vec2::new(celestial_bodies[1].1.x, celestial_bodies[1].1.z),
+        Vec2::new(celestial_bodies[2].1.x, celestial_bodies[2].1.z),
+        Vec2::new(celestial_bodies[3].1.x, celestial_bodies[3].1.z),
+        Vec2::new(celestial_bodies[4].1.x, celestial_bodies[4].1.z),
+        Vec2::new(celestial_bodies[5].1.x, celestial_bodies[5].1.z),
     );
 
     while window.is_open() {
@@ -187,12 +185,12 @@ fn main() {
 
         framebuffer.clear();
 
-        let noise = create_noise();
+        let noise = create_noise(0);
         let model_matrix = create_model_matrix(translation, scale, Vec3::new(rotation_x, rotation_y, rotation_z));
         let view_matrix = create_view_matrix(camera.eye, camera.center, camera.up);
         let projection_matrix = create_perspective_matrix(width as f32, height as f32);
         let viewport_matrix = create_viewport_matrix(width as f32, height as f32);
-        let uniforms = Uniforms { 
+        let uniforms_base = Uniforms { 
             model_matrix, 
             view_matrix,
             projection_matrix,
@@ -201,9 +199,27 @@ fn main() {
             noise,
         };
 
-        skybox.render(&mut framebuffer, &uniforms, camera.eye);
+        skybox.render(&mut framebuffer, &uniforms_base, camera.eye);
 
-        render(&mut framebuffer, &uniforms, &vertex_arrays);
+        render(&mut framebuffer, &uniforms_base, &vertex_arrays, 0);
+        
+        for (vertex_array, translation, scale, number) in &celestial_bodies {
+             if is_in_center(*translation, &mut camera) {
+
+                let distance = (camera.eye - *translation).magnitude();
+
+                let new_scale = calculate_scale_based_on_distance(distance, *scale);
+                let noise = create_noise(*number);
+                let model_matrix = create_model_matrix(*translation, new_scale, Vec3::zeros());
+                let uniforms = Uniforms {
+                    model_matrix,
+                    noise,
+                    ..uniforms_base
+                };
+                render(&mut framebuffer, &uniforms, vertex_array, *number);
+            }
+        }
+
         minimap.render(&mut framebuffer);
 
         window
@@ -212,6 +228,47 @@ fn main() {
 
         std::thread::sleep(frame_delay);
     }
+}
+fn calculate_scale_based_on_distance(distance: f32, max_scale: f32) -> f32 {
+    // Definir un mínimo y un máximo de escala
+    let min_scale = 5.0;
+
+    let max_distance = 10000.0; // La distancia máxima para la escala
+    let scale_factor = (distance / max_distance).clamp(0.0, 1.0);
+    min_scale + (max_scale - min_scale) * (1.0 - scale_factor) // A mayor distancia, menor escala
+}
+
+fn is_in_center(translation: Vec3, camera: &mut Camera) -> bool {
+    let camera_xy = Vec2::new(camera.eye.x, camera.eye.y);
+    let translation_xy = Vec2::new(translation.x, translation.y);
+    let range = 3000.0; // Rango permitido en unidades.
+
+    // Verificar si está dentro del rango en ambas dimensiones.
+    let in_range = (translation_xy.x >= camera_xy.x - range && translation_xy.x <= camera_xy.x + range) &&
+                   (translation_xy.y >= camera_xy.y - range && translation_xy.y <= camera_xy.y + range);
+
+    if !in_range {
+        return false;
+    }
+
+    // Vector dirección desde la cámara hacia el objeto.
+    let direction_to_object = translation - camera.eye;
+
+    // Vector dirección de la cámara.
+    let camera_direction = camera.center - camera.eye;
+
+    // Normalizar los vectores para evitar problemas de escala.
+    let direction_to_object_norm = direction_to_object.normalize();
+    let camera_direction_norm = camera_direction.normalize();
+
+    // Calcular el producto punto para obtener el coseno del ángulo.
+    let dot_product = direction_to_object_norm.dot(&camera_direction_norm);
+
+    // El ángulo máximo permitido (ajustable según el FOV de la cámara).
+    let fov_cosine = (45.0f32.to_radians()).cos(); // 45 grados de FOV como ejemplo.
+
+    // Verificar si el objeto está dentro del FOV.
+    dot_product > fov_cosine
 }
 
 fn handle_input(
@@ -242,7 +299,7 @@ fn handle_input(
 
     // Movimiento en la dirección de la orientación
     if window.is_key_down(Key::W) {
-        move_direction += orientation * movement_speed;
+        move_direction += orientation * -movement_speed;
 
         camera.eye = *translation + orbit_radius * orientation;
         camera.center = *translation;
