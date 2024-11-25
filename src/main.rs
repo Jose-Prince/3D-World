@@ -21,7 +21,9 @@ mod polygon;
 mod line;
 mod barrelRoll;
 mod colisionWarning;
+mod autopilot;
 
+use autopilot::Autopilot;
 use colisionWarning::ColisionWarning;
 use barrelRoll::BarrelRoll;
 use minimap::Minimap;
@@ -152,6 +154,7 @@ fn main() {
     let mut last_blink_time = Instant::now();
     let mut show_warning = false;
     let mut show_autopilot = false;
+    let mut autopilot = Autopilot::new();
 
     let mut celestial_bodies = vec![
         (vertex_arrays_sphere.clone(), Vec3::new(0.0, 0.0, 0.0), 3000.0, 4, 0.0), //star
@@ -210,29 +213,31 @@ fn main() {
         skybox.render(&mut framebuffer, &uniforms_base, camera.eye);
 
         
-        for (vertex_array, translation, scale, number, _) in &celestial_bodies {
-             if is_in_center(*translation, &mut camera, true) && !barrel_roll.active {
+        for (vertex_array, traslation, scale, number, _) in &celestial_bodies {
+             if is_in_center(*traslation, &mut camera, true) && !barrel_roll.active {
 
-                let distance = (camera.eye - *translation).magnitude();
-                if distance < 3500.0 && last_blink_time.elapsed() >= blink_interval {
+                let distance = (camera.eye - *traslation).magnitude();
+                if distance < 3500.0 && last_blink_time.elapsed() >= blink_interval && !show_autopilot  {
                     show_autopilot = false;
                     show_warning = !show_warning;
-                    println!("Muy cerca, CUIDADO!");
                 }
 
-                if distance < 2900.0 && last_blink_time.elapsed() >= blink_interval {
+                if distance < 2900.0 {
                     show_warning = false;
-                    show_autopilot = !show_autopilot;
+                    show_autopilot = true;
                 }
                 if show_warning {
                     warning_message.render(&mut framebuffer);
                 }
                 if show_autopilot {
                     autopilot_message.render(&mut framebuffer);
+                    if !autopilot.active {
+                        autopilot.start();
+                    }
                 }
 
                 let noise = create_noise(*number);
-                let model_matrix = create_model_matrix(*translation, *scale, Vec3::zeros());
+                let model_matrix = create_model_matrix(*traslation, *scale, Vec3::zeros());
                 let uniforms = Uniforms {
                     model_matrix,
                     noise,
@@ -266,11 +271,24 @@ fn main() {
             }
         }
 
-         
+        if autopilot.active {
+            if autopilot.progress < 0.5 {
+                autopilot.simulated_keys = vec![Key::A];
+                autopilot.progress += 0.01;
+                println!("Progress: {:?}", autopilot.progress)
+            } else if autopilot.distance_traveled < 2000.0 {
+                autopilot.simulated_keys = vec![Key::W];
+                autopilot.distance_traveled += 10.0;
+            } else {
+                autopilot.stop();
+                show_autopilot = false;
+            }
+        }
+
         if !is_alternate_render {
 
             // Manejo de entrada actualizado con desacoplamiento
-            if window.is_key_down(Key::W) {
+            if window.is_key_down(Key::W) && !autopilot.active {
                 handle_input(
                     &window, 
                     &mut translation, 
@@ -283,6 +301,16 @@ fn main() {
                     &mut barrel_roll,
                 );
             }
+
+            handle_autopilot(
+                &mut translation, 
+                &mut rotation_y, 
+                &mut rotation_x,
+                &mut camera, 
+                &mut minimap,
+                autopilot.simulated_keys.clone(),
+            );
+
             handle_camera(
                 &window,
                 &mut camera,
@@ -429,6 +457,56 @@ fn handle_input(
             *rotation_z = 0.0;
             *rotation_y = barrel_roll.rotation_y;
             performing_action = false;
+        }
+    }
+
+    // Aplicar movimiento a la posición de la nave
+    *translation += move_direction;
+
+    // Actualizar la posición de la cámara para que siga a la nave
+    camera.eye = *translation + orbit_radius * Vec3::new(rotation_y.sin(), 0.0, rotation_y.cos());
+    camera.center = *translation;
+
+    // Suavizar rotación y mantener orientación suave
+    camera.up = Vec3::new(0.0, 1.0, 0.0);
+
+    // Actualizar posición en el minimapa
+    minimap.update_ship_pos(translation.x, translation.z);
+}
+
+fn handle_autopilot(
+    translation: &mut Vec3,
+    rotation_y: &mut f32,
+    rotation_x: &mut f32,
+    camera: &mut Camera,
+    minimap: &mut Minimap,
+    simulated_keys: Vec<Key>,
+) {
+    let smooth_factor = 0.1;
+    let movement_speed = 50.0;
+    let rotation_speed = 0.05;
+    let orbit_radius = 500.0;
+
+    let mut move_direction = Vec3::new(0.0, 0.0, 0.0);
+
+    // Orientación basada en la rotación actual
+    let orientation = Vec3::new(rotation_y.sin(), 0.0, rotation_y.cos());
+
+    let mut keys = simulated_keys;
+
+    for key in keys {
+        match key {
+            Key::W => {
+                move_direction += orientation * -movement_speed;
+                *rotation_x = lerp(*rotation_x, -3.1, smooth_factor);
+            },
+            Key::A => {
+                *rotation_y += rotation_speed;
+            },
+            Key::D => {
+                *rotation_y -= rotation_speed;
+            },
+            _ => {}
         }
     }
 
