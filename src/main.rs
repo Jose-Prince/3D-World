@@ -201,7 +201,7 @@ fn main() {
 
         
         for (vertex_array, translation, scale, number, _) in &celestial_bodies {
-             if is_in_center(*translation, &mut camera, true) {
+             if is_in_center(*translation, &mut camera, true) && !barrel_roll.active {
 
                 let noise = create_noise(*number);
                 let model_matrix = create_model_matrix(*translation, *scale, Vec3::zeros());
