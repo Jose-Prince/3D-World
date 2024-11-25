@@ -19,7 +19,9 @@ mod skybox;
 mod minimap;
 mod polygon;
 mod line;
+mod barrelRoll;
 
+use barrelRoll::BarrelRoll;
 use minimap::Minimap;
 use skybox::Skybox;
 use color::Color;
@@ -127,8 +129,8 @@ fn main() {
     let mut scale = 20.0f32;
 
     let mut camera = Camera {
-        eye: Vec3::new(0.0, 0.0, 89000.0),
-        center: Vec3::new(0.0,0.0,0.0),
+        eye: Vec3::new(translation.x - 50.0, translation.y, translation.z + 500.0),
+        center: Vec3::new(translation.x - 50.0,translation.y, translation.z),
         up: Vec3::new(0.0, 1.0, 0.0), 
         has_changed: true,
     };
@@ -165,6 +167,8 @@ fn main() {
         Vec2::new(celestial_bodies[5].1.x, celestial_bodies[5].1.z),
     );
 
+    let mut barrel_roll = BarrelRoll { active: false, progress: 0.0, rotation_y: rotation_y };
+
     while window.is_open() {
         if window.is_key_down(Key::Escape) {
             break;
@@ -199,9 +203,6 @@ fn main() {
         for (vertex_array, translation, scale, number, _) in &celestial_bodies {
              if is_in_center(*translation, &mut camera, true) {
 
-                let distance = (camera.eye - *translation).magnitude();
-
-                let new_scale = calculate_scale_based_on_distance(distance, *scale);
                 let noise = create_noise(*number);
                 let model_matrix = create_model_matrix(*translation, *scale, Vec3::zeros());
                 let uniforms = Uniforms {
@@ -241,15 +242,22 @@ fn main() {
         if !is_alternate_render {
 
             // Manejo de entrada actualizado con desacoplamiento
-            handle_input(
-                &window, 
-                &mut translation, 
-                &mut rotation_y, 
-                &mut rotation_x,
-                &mut rotation_z,
-                &mut scale, 
-                &mut camera, 
-                &mut minimap,
+            if window.is_key_down(Key::W) {
+                handle_input(
+                    &window, 
+                    &mut translation, 
+                    &mut rotation_y, 
+                    &mut rotation_x,
+                    &mut rotation_z,
+                    &mut scale, 
+                    &mut camera, 
+                    &mut minimap,
+                    &mut barrel_roll,
+                );
+            }
+            handle_camera(
+                &window,
+                &mut camera,
             );
 
             render(&mut framebuffer, &uniforms_base, &vertex_arrays, 0);
@@ -286,10 +294,6 @@ fn is_in_center(translation: Vec3, camera: &mut Camera, is_up: bool) -> bool {
         // Verificar si está dentro del rango en ambas dimensiones.
         let in_range = (translation_xz.x >= camera_xz.x - range && translation_xz.x <= camera_xz.x + range) &&
         (translation_xz.y >= camera_xz.y - range && translation_xz.y <= camera_xz.y + range);
-
-        println!("Rendering object at position: {:?}", translation);
-        println!("Camera position: {:?}, direction: {:?}", camera.eye, camera.center);
-
 
         if !in_range {
             return false;
@@ -333,12 +337,13 @@ fn is_in_center(translation: Vec3, camera: &mut Camera, is_up: bool) -> bool {
 fn handle_input(
     window: &Window,
     translation: &mut Vec3,
-    rotation_y: &mut f32, // Solo el ángulo Y es necesario.
+    rotation_y: &mut f32,
     rotation_x: &mut f32,
     rotation_z: &mut f32,
     scale: &mut f32,
     camera: &mut Camera,
     minimap: &mut Minimap,
+    barrel_roll: &mut BarrelRoll,
 ) {
     let smooth_factor = 0.1;
     let movement_speed = 50.0;
@@ -346,42 +351,87 @@ fn handle_input(
     let orbit_radius = 500.0;
 
     let mut move_direction = Vec3::new(0.0, 0.0, 0.0);
-    let mut orientation = Vec3::new(rotation_y.sin(), 0.0, rotation_y.cos());
 
-    // Rotación de la cámara/orientación
-    if window.is_key_down(Key::Right) {
-        camera.orbit(-0.05, 0.0);
+    let mut performing_action = false;
+
+        // Orientación basada en la rotación actual
+    let orientation = Vec3::new(rotation_y.sin(), 0.0, rotation_y.cos());
+    let right = Vec3::new(-orientation.z, 0.0, orientation.x); // Vector ortogonal
+
+    if !performing_action {
+        // Movimiento hacia adelante y atrás
+        if window.is_key_down(Key::W) {
+            move_direction += orientation * -movement_speed;
+            *rotation_x = lerp(*rotation_x, -3.1, smooth_factor);
+        }
+        if window.is_key_down(Key::S) {
+            move_direction -= orientation * -movement_speed;
+        }
+
+        // Movimiento lateral
+        if window.is_key_down(Key::A) && window.is_key_down(Key::W) {
+            *rotation_y += rotation_speed;
+            move_direction += right * movement_speed;
+        }
+        if window.is_key_down(Key::D) && window.is_key_down(Key::W) {
+            *rotation_y -= rotation_speed;
+            move_direction -= right * movement_speed;
+        }
+
+        // Rotación vertical (Pitch)
+        if window.is_key_down(Key::Down) && window.is_key_down(Key::W) {
+            move_direction.y += movement_speed;
+            *rotation_x = lerp(*rotation_x, -5.0 * (PI / 10.0), smooth_factor);
+        }
+        if window.is_key_down(Key::Up) && window.is_key_down(Key::W) { 
+             move_direction.y -= movement_speed;
+            *rotation_x = lerp(*rotation_x, -(PI/10.0) - PI * 1.4, smooth_factor);
+        }
     }
-    if window.is_key_down(Key::Left) {
-        camera.orbit(0.05, 0.0);
+
+    //DO A BARREL ROLL
+    if window.is_key_down(Key::X) && !barrel_roll.active {
+        barrel_roll.active = true;
+        barrel_roll.progress = 0.0;
+        barrel_roll.rotation_y = *rotation_y;
+        performing_action = true;
     }
 
-    // Movimiento en la dirección de la orientación
-    if window.is_key_down(Key::W) {
-        move_direction += orientation * -movement_speed;
+    if barrel_roll.active {
+        println!("Barrel roll: {:?}", barrel_roll.rotation_y);
+        let animation_speed = 0.08;
+        *rotation_y = 0.0;
+        barrel_roll.progress += animation_speed;
+        println!("barrel roll progress: {:?}", barrel_roll.progress);
 
-        camera.eye = *translation + orbit_radius * orientation;
-        camera.center = *translation;
+        *rotation_z = lerp(0.0, 2.0 * PI, barrel_roll.progress);
 
-        *rotation_x = lerp(*rotation_x, -3.1, smooth_factor);
+        if barrel_roll.progress >= 1.0 {
+            barrel_roll.active = false;
+            barrel_roll.progress = 0.0;
+            *rotation_z = 0.0;
+            *rotation_y = barrel_roll.rotation_y;
+            performing_action = false;
+
+        println!("old_rotation: {:?}", rotation_y);
+        }
     }
 
-    // Movimiento lateral (izquierda/derecha, ortogonal a la orientación)
-    let right = Vec3::new(-orientation.z, 0.0, orientation.x); // Vector perpendicular a la orientación.
-    if window.is_key_down(Key::A) {
-        move_direction += right * (movement_speed);
-        *rotation_y += rotation_speed;
-        orientation.x = rotation_y.sin();
-        orientation.z = rotation_y.cos();
-    }
-    if window.is_key_down(Key::D) {
-        move_direction -= right * movement_speed;
-        *rotation_y -= rotation_speed;
-        orientation.x = rotation_y.sin();
-        orientation.z = rotation_y.cos();
-    }
+    // Aplicar movimiento a la posición de la nave
+    *translation += move_direction;
 
-    // Movimiento vertical
+    // Actualizar la posición de la cámara para que siga a la nave
+    camera.eye = *translation + orbit_radius * Vec3::new(rotation_y.sin(), 0.0, rotation_y.cos());
+    camera.center = *translation;
+
+    // Suavizar rotación y mantener orientación suave
+    camera.up = Vec3::new(0.0, 1.0, 0.0);
+
+    // Actualizar posición en el minimapa
+    minimap.update_ship_pos(translation.x, translation.z);
+}
+
+fn handle_camera(window: &Window, camera: &mut Camera) {
     if window.is_key_down(Key::Up) {
         camera.orbit(0.0,0.05);
     } 
@@ -390,21 +440,12 @@ fn handle_input(
         camera.orbit(0.0,-0.05);
     }
 
-    if window.is_key_down(Key::Up) && window.is_key_down(Key::W) {
-        move_direction.y += movement_speed;
-        *rotation_x = lerp(*rotation_x, -(PI/10.0) - PI * 1.4, smooth_factor);
+     if window.is_key_down(Key::Right) {
+        camera.orbit(-0.05, 0.0);
     }
-
-    if window.is_key_down(Key::Down) && window.is_key_down(Key::W) {
-        move_direction.y -= movement_speed;
-        *rotation_x = lerp(*rotation_x, -5.0 * (PI / 10.0), smooth_factor);
+    if window.is_key_down(Key::Left) {
+        camera.orbit(0.05, 0.0);
     }
-
-    // Aplicar movimiento y actualizar posición de la cámara
-    *translation += move_direction;
-
-    // Minimapa actualizado
-    minimap.update_ship_pos(translation.x, translation.z);
 }
 
 fn lerp(a: f32, b: f32, t: f32) -> f32 {
