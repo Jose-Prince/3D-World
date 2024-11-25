@@ -22,7 +22,9 @@ mod line;
 mod barrelRoll;
 mod colisionWarning;
 mod autopilot;
+mod audioPlayer;
 
+use audioPlayer::AudioPlayer;
 use autopilot::Autopilot;
 use colisionWarning::ColisionWarning;
 use barrelRoll::BarrelRoll;
@@ -139,6 +141,8 @@ fn main() {
         has_changed: true,
     };
 
+    //Setting if in gameplay or not
+
     let obj = Obj::load("objs/ship.obj").expect("Failed to load obj");
     let vertex_arrays = obj.get_vertex_array(); 
     
@@ -157,6 +161,14 @@ fn main() {
     let mut show_autopilot = false;
     let mut autopilot = Autopilot::new();
 
+    //OST
+    let mut begin_screen_ost = AudioPlayer::new("audios/Super Mario Galaxy Soundtrack - Title Screen.mp3",0.5); 
+    let mut gameplay_ost = AudioPlayer::new("audios/Ambient Space Synth Music (For Videos) - Adrift by Hayden Folker.mp3",0.5);
+
+    gameplay_ost.stop();
+    
+
+    //Celestial bodies for rendering
     let mut celestial_bodies = vec![
         (vertex_arrays_sphere.clone(), Vec3::new(0.0, 0.0, 0.0), 3000.0, 4, 0.0), //star
         (vertex_arrays_sphere.clone(), Vec3::new(2.0 * 4000.0 / 2.0f32.sqrt(), 0.0, 2.0 * 4000.0 / 2.0f32.sqrt()), 3000.0, 2, 0.0),
@@ -186,6 +198,8 @@ fn main() {
     let mut show_text = true;
     let mut enter_pressed = false;
 
+    begin_screen_ost.play();
+
     while window.is_open() && !enter_pressed && !window.is_key_down(minifb::Key::Escape) {
         framebuffer.clear();
         framebuffer.draw_image(&begin_page, width, height);
@@ -203,6 +217,8 @@ fn main() {
 
         if window.is_key_down(minifb::Key::Enter) {
             enter_pressed = true;
+            begin_screen_ost.stop();
+            gameplay_ost.play();
         }
 
         window.update_with_buffer(&framebuffer.buffer, width, height).unwrap();
