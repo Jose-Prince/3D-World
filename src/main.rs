@@ -144,12 +144,12 @@ fn main() {
     let skybox = Skybox::new(10000);
 
     let mut celestial_bodies = vec![
-        (vertex_arrays_sphere.clone(), Vec3::new(0.0, 0.0, 0.0), 3000.0, 4), //star
-        (vertex_arrays_sphere.clone(), Vec3::new(2000.0 / 2.0f32.sqrt(), 0.0, 2000.0 / 2.0f32.sqrt()), 3000.0, 2),
-        (vertex_arrays_sphere.clone(), Vec3::new(4000.0 / 2.0f32.sqrt(), 0.0, -4000.0 / 2.0f32.sqrt()), 2500.0, 3),
-        (vertex_arrays_sphere.clone(), Vec3::new(-6000.0 / 2.0f32.sqrt(), 0.0, -6000.0 / 2.0f32.sqrt()), 1800.0, 1),
-        (vertex_arrays_sphere.clone(), Vec3::new(-8000.0 / 2.0f32.sqrt(), 0.0, 8000.0 / 2.0f32.sqrt()), 1800.0, 5),
-        (vertex_arrays_sphere.clone(), Vec3::new(-8000.0, 0.0, 0.0), 1800.0, 6),
+        (vertex_arrays_sphere.clone(), Vec3::new(0.0, 0.0, 0.0), 3000.0, 4, 0.0), //star
+        (vertex_arrays_sphere.clone(), Vec3::new(2000.0 / 2.0f32.sqrt(), 0.0, 2000.0 / 2.0f32.sqrt()), 3000.0, 2, 0.0),
+        (vertex_arrays_sphere.clone(), Vec3::new(4000.0 / 2.0f32.sqrt(), 0.0, -4000.0 / 2.0f32.sqrt()), 2500.0, 3, 0.0),
+        (vertex_arrays_sphere.clone(), Vec3::new(-6000.0 / 2.0f32.sqrt(), 0.0, -6000.0 / 2.0f32.sqrt()), 1800.0, 1, 0.0),
+        (vertex_arrays_sphere.clone(), Vec3::new(-8000.0 / 2.0f32.sqrt(), 0.0, 8000.0 / 2.0f32.sqrt()), 1800.0, 5, 0.0),
+        (vertex_arrays_sphere.clone(), Vec3::new(-8000.0, 0.0, 0.0), 1800.0, 6, 0.0),
     ];
 
     let mut minimap = Minimap::new(
@@ -203,7 +203,7 @@ fn main() {
 
         render(&mut framebuffer, &uniforms_base, &vertex_arrays, 0);
         
-        for (vertex_array, translation, scale, number) in &celestial_bodies {
+        for (vertex_array, translation, scale, number, _) in &celestial_bodies {
              if is_in_center(*translation, &mut camera) {
 
                 let distance = (camera.eye - *translation).magnitude();
@@ -218,6 +218,16 @@ fn main() {
                 };
                 render(&mut framebuffer, &uniforms, vertex_array, *number);
             }
+        }
+
+        for body in &mut celestial_bodies {
+            let (_, position, _, _, angle) = body;
+
+            *angle += 0.001 as f32;
+
+            let radius = position.magnitude();
+            position.x = radius * angle.cos();
+            position.z = radius * angle.sin();
         }
 
         minimap.render(&mut framebuffer);
@@ -282,7 +292,7 @@ fn handle_input(
     minimap: &mut Minimap,
 ) {
     let smooth_factor = 0.1;
-    let movement_speed = 5.0;
+    let movement_speed = 50.0;
     let rotation_speed = 0.05;
     let orbit_radius = 500.0;
 
