@@ -139,10 +139,10 @@ fn main() {
         has_changed: true,
     };
 
-    let obj = Obj::load("src/ship.obj").expect("Failed to load obj");
+    let obj = Obj::load("objs/ship.obj").expect("Failed to load obj");
     let vertex_arrays = obj.get_vertex_array(); 
     
-    let sphere = Obj::load("src/sphere.obj").expect("Failed to load obj");
+    let sphere = Obj::load("objs/sphere.obj").expect("Failed to load obj");
     let vertex_arrays_sphere = sphere.get_vertex_array();
 
     let mut time = 0;
@@ -151,6 +151,7 @@ fn main() {
     let skybox = Skybox::new(10000);
 
     let blink_interval = Duration::from_millis(1500);
+    let text_blink_interval = Duration::from_millis(200);
     let mut last_blink_time = Instant::now();
     let mut show_warning = false;
     let mut show_autopilot = false;
@@ -181,6 +182,32 @@ fn main() {
     let mut warning_message = ColisionWarning::new("DANGER!".to_string(), "Inminent gravitational field".to_string(), Color::new(255,255,255), Color::new(255,0,0));
     let mut autopilot_message = ColisionWarning::new("Autopilot Activated".to_string(), "Avoiding gravitational field".to_string(), Color::new(255,255,255), Color::new(254,138,24));
 
+    let begin_page = "src/ship_img.jpg";
+    let mut show_text = true;
+    let mut enter_pressed = false;
+
+    while window.is_open() && !enter_pressed && !window.is_key_down(minifb::Key::Escape) {
+        framebuffer.clear();
+        framebuffer.draw_image(&begin_page, width, height);
+
+        framebuffer.draw_text(width / 4, height - 750, "No UVG's Sky", Color::new(12,140,57), 100.0);
+
+        if last_blink_time.elapsed() >= text_blink_interval {
+            show_text = !show_text;
+            last_blink_time = Instant::now();
+        }
+        
+        if show_text {
+            framebuffer.draw_text(width / 5, (4 * height) / 5 - 25, "Press ENTER to start game", Color::new(255,255,255), 70.0);
+        }
+
+        if window.is_key_down(minifb::Key::Enter) {
+            enter_pressed = true;
+        }
+
+        window.update_with_buffer(&framebuffer.buffer, width, height).unwrap();
+        std::thread::sleep(Duration::from_millis(16));
+    }
 
     while window.is_open() {
         if window.is_key_down(Key::Escape) {
@@ -276,7 +303,7 @@ fn main() {
                 autopilot.simulated_keys = vec![Key::A];
                 autopilot.progress += 0.01;
                 println!("Progress: {:?}", autopilot.progress)
-            } else if autopilot.distance_traveled < 2000.0 {
+            } else if autopilot.distance_traveled < 1000.0 {
                 autopilot.simulated_keys = vec![Key::W];
                 autopilot.distance_traveled += 10.0;
             } else {
@@ -295,21 +322,23 @@ fn main() {
                     &mut rotation_y, 
                     &mut rotation_x,
                     &mut rotation_z,
-                    &mut scale, 
                     &mut camera, 
                     &mut minimap,
                     &mut barrel_roll,
                 );
             }
-
-            handle_autopilot(
-                &mut translation, 
-                &mut rotation_y, 
-                &mut rotation_x,
-                &mut camera, 
-                &mut minimap,
-                autopilot.simulated_keys.clone(),
-            );
+            
+            if autopilot.active {
+                handle_autopilot(
+                    &mut translation, 
+                    &mut rotation_y, 
+                    &mut rotation_x,
+                    &mut camera, 
+                    &mut minimap,
+                    autopilot.simulated_keys.clone(),
+                );
+            }
+            
 
             handle_camera(
                 &window,
@@ -387,7 +416,6 @@ fn handle_input(
     rotation_y: &mut f32,
     rotation_x: &mut f32,
     rotation_z: &mut f32,
-    scale: &mut f32,
     camera: &mut Camera,
     minimap: &mut Minimap,
     barrel_roll: &mut BarrelRoll,
