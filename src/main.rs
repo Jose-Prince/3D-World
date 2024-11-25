@@ -2,7 +2,7 @@
 
 use nalgebra_glm::{Vec3, Vec2};
 use minifb::{Key, Window, WindowOptions};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use std::f32::consts::PI;
 
 mod framebuffer;
@@ -20,7 +20,9 @@ mod minimap;
 mod polygon;
 mod line;
 mod barrelRoll;
+mod colisionWarning;
 
+use colisionWarning::ColisionWarning;
 use barrelRoll::BarrelRoll;
 use minimap::Minimap;
 use skybox::Skybox;
@@ -146,6 +148,11 @@ fn main() {
 
     let skybox = Skybox::new(10000);
 
+    let blink_interval = Duration::from_millis(1500);
+    let mut last_blink_time = Instant::now();
+    let mut show_warning = false;
+    let mut show_autopilot = false;
+
     let mut celestial_bodies = vec![
         (vertex_arrays_sphere.clone(), Vec3::new(0.0, 0.0, 0.0), 3000.0, 4, 0.0), //star
         (vertex_arrays_sphere.clone(), Vec3::new(2.0 * 4000.0 / 2.0f32.sqrt(), 0.0, 2.0 * 4000.0 / 2.0f32.sqrt()), 3000.0, 2, 0.0),
@@ -168,6 +175,9 @@ fn main() {
     );
 
     let mut barrel_roll = BarrelRoll { active: false, progress: 0.0, rotation_y: rotation_y };
+    let mut warning_message = ColisionWarning::new("DANGER!".to_string(), "Inminent gravitational field".to_string(), Color::new(255,255,255), Color::new(255,0,0));
+    let mut autopilot_message = ColisionWarning::new("Autopilot Activated".to_string(), "Avoiding gravitational field".to_string(), Color::new(255,255,255), Color::new(254,138,24));
+
 
     while window.is_open() {
         if window.is_key_down(Key::Escape) {
@@ -202,6 +212,24 @@ fn main() {
         
         for (vertex_array, translation, scale, number, _) in &celestial_bodies {
              if is_in_center(*translation, &mut camera, true) && !barrel_roll.active {
+
+                let distance = (camera.eye - *translation).magnitude();
+                if distance < 3500.0 && last_blink_time.elapsed() >= blink_interval {
+                    show_autopilot = false;
+                    show_warning = !show_warning;
+                    println!("Muy cerca, CUIDADO!");
+                }
+
+                if distance < 2900.0 && last_blink_time.elapsed() >= blink_interval {
+                    show_warning = false;
+                    show_autopilot = !show_autopilot;
+                }
+                if show_warning {
+                    warning_message.render(&mut framebuffer);
+                }
+                if show_autopilot {
+                    autopilot_message.render(&mut framebuffer);
+                }
 
                 let noise = create_noise(*number);
                 let model_matrix = create_model_matrix(*translation, *scale, Vec3::zeros());
@@ -273,15 +301,6 @@ fn main() {
 
         std::thread::sleep(frame_delay);
     }
-}
-
-fn calculate_scale_based_on_distance(distance: f32, max_scale: f32) -> f32 {
-    // Definir un mínimo y un máximo de escala
-    let min_scale = 5.0;
-
-    let max_distance = 10000.0; // La distancia máxima para la escala
-    let scale_factor = (distance / max_distance).clamp(0.0, 1.0);
-    min_scale + (max_scale - min_scale) * (1.0 - scale_factor) // A mayor distancia, menor escala
 }
 
 fn is_in_center(translation: Vec3, camera: &mut Camera, is_up: bool) -> bool {
@@ -398,11 +417,9 @@ fn handle_input(
     }
 
     if barrel_roll.active {
-        println!("Barrel roll: {:?}", barrel_roll.rotation_y);
         let animation_speed = 0.08;
         *rotation_y = 0.0;
         barrel_roll.progress += animation_speed;
-        println!("barrel roll progress: {:?}", barrel_roll.progress);
 
         *rotation_z = lerp(0.0, 2.0 * PI, barrel_roll.progress);
 
@@ -412,8 +429,6 @@ fn handle_input(
             *rotation_z = 0.0;
             *rotation_y = barrel_roll.rotation_y;
             performing_action = false;
-
-        println!("old_rotation: {:?}", rotation_y);
         }
     }
 
