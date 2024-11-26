@@ -172,9 +172,9 @@ fn main() {
     let mut celestial_bodies = vec![
         (vertex_arrays_sphere.clone(), Vec3::new(0.0, 0.0, 0.0), 3000.0, 4, 0.0), //star
         (vertex_arrays_sphere.clone(), Vec3::new(2.0 * 4000.0 / 2.0f32.sqrt(), 0.0, 2.0 * 4000.0 / 2.0f32.sqrt()), 3000.0, 2, 0.0),
-        (vertex_arrays_sphere.clone(), Vec3::new(2.0 *8000.0 / 2.0f32.sqrt(), 0.0,2.0 * -8000.0 / 2.0f32.sqrt()), 2500.0, 3, 1.57),
-        (vertex_arrays_sphere.clone(), Vec3::new(2.0 * -12000.0 / 2.0f32.sqrt(), 0.0,2.0 * -12000.0 / 2.0f32.sqrt()), 1800.0, 1, 3.14),
-        (vertex_arrays_sphere.clone(), Vec3::new(2.0 * -16000.0 / 2.0f32.sqrt(), 0.0,2.0 * 16000.0 / 2.0f32.sqrt()), 1800.0, 5, 4.71),
+        (vertex_arrays_sphere.clone(), Vec3::new(2.0 *8000.0 / 2.0f32.sqrt(), 0.0,2.0 * -8000.0 / 2.0f32.sqrt()), 2500.0, 3, 8.57),
+        (vertex_arrays_sphere.clone(), Vec3::new(2.0 * -12000.0 / 2.0f32.sqrt(), 0.0,2.0 * -12000.0 / 2.0f32.sqrt()), 1800.0, 1, 2.14),
+        (vertex_arrays_sphere.clone(), Vec3::new(2.0 * -16000.0 / 2.0f32.sqrt(), 0.0,2.0 * 16000.0 / 2.0f32.sqrt()), 1800.0, 5, 40.71),
         (vertex_arrays_sphere.clone(), Vec3::new(2.0 * -16000.0, 0.0, 0.0), 1800.0, 6, 6.28),
     ];
 
@@ -192,7 +192,7 @@ fn main() {
 
     let mut barrel_roll = BarrelRoll { active: false, progress: 0.0, rotation_y: rotation_y };
     let mut warning_message = ColisionWarning::new("DANGER!".to_string(), "Inminent gravitational field".to_string(), Color::new(255,255,255), Color::new(255,0,0));
-    let mut autopilot_message = ColisionWarning::new("Autopilot Activated".to_string(), "Avoiding gravitational field".to_string(), Color::new(255,255,255), Color::new(254,138,24));
+    let mut autopilot_message = ColisionWarning::new("Autopilot".to_string(), "Avoiding gravitational field".to_string(), Color::new(255,255,255), Color::new(254,138,24));
 
     let begin_page = "src/ship_img.jpg";
     let mut show_text = true;
@@ -318,7 +318,6 @@ fn main() {
             if autopilot.progress < 0.5 {
                 autopilot.simulated_keys = vec![Key::A];
                 autopilot.progress += 0.01;
-                println!("Progress: {:?}", autopilot.progress)
             } else if autopilot.distance_traveled < 1000.0 {
                 autopilot.simulated_keys = vec![Key::W];
                 autopilot.distance_traveled += 10.0;

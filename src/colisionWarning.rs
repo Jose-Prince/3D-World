@@ -53,7 +53,11 @@ vertex_back.push([
 ]);
 
 
+        framebuffer.draw_text(framebuffer.width / 2 - 55, framebuffer.height / 2 - 25, &self.big_msg, Color::new(255,255,255), 40.0);
+        framebuffer.draw_text(framebuffer.width / 2 - 107, framebuffer.height / 2 + 20, &self.small_msg, Color::new(255,255,255), 20.0);
         framebuffer.polygon(&vertex, self.color_warning, self.color_warning);
         framebuffer.polygon(&vertex_back, self.color_back, self.color_back); 
+
+
     }
 }
